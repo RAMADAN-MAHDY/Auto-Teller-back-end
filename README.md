@@ -14,7 +14,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://your-backend-url.com/api/v1',
+  baseURL: 'https://0946-197-133-64-172.ngrok-free.app/api/v1',
 });
 
 // إضافة التوكن في كل طلب
