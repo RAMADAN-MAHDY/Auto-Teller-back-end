@@ -1,0 +1,224 @@
+@host = https://0946-197-133-64-172.ngrok-free.app
+@baseUrl = https://0946-197-133-64-172.ngrok-free.app/api/v1
+
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTNhMjYwZjE0NTY5MTUzZWE2ZGJhOTEiLCJlbWFpbCI6ImFkbWluQGJhbmtyZWFjaC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODIzNzgyMDcsImV4cCI6MTc4MjM5NjIwN30.MABUDvhDEjbGsVDN2nq73b1eszyf3vfpTCRnS9yV_bI
+@refreshToken =
+
+@userId = 6a3cef01fd4f9b376c75daf3
+@customerId =6a3a2fb218cae4e4ceb3f71a
+@customerGroup = LATE
+@templateId = 6a3a2fe118cae4e4ceb3f71f
+@campaignId =6a3cf1a8fd4f9b376c75db37
+@messageId = 6a3a4abc84ccb4fad13566b9
+
+@webhookVerifyToken = BankReach_Webhook_Verify_2026_Secret
+
+### فحص صحة السيرفر (Health Check)
+GET {{host}}/health
+
+### تسجيل مستخدم جديد (Register) - بيرجع tokens + بيانات المستخدم
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Admin",
+  "email": "admin@bankreach.com",
+  "password": "Password123"
+}
+
+### تسجيل دخول (Login) - بيرجع accessToken + refreshToken
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@bankreach.com",
+  "password": "Password123"
+}
+
+### تجديد التوكن (Refresh) باستخدام refreshToken
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTNhMjYwZjE0NTY5MTUzZWE2ZGJhOTEiLCJlbWFpbCI6ImFkbWluQGJhbmtyZWFjaC5jb20iLCJyb2xlIjoiZW1wbG95ZWUiLCJpYXQiOjE3ODIxOTU3NzgsImV4cCI6MTc4MjgwMDU3OH0.9IuZlk1U4dPGpBfHkDi1QuPmnczZdl9-KNSC9HIq0LQ"
+}
+
+### عرض قائمة المستخدمين (Pagination) - صلاحية Admin فقط
+GET {{baseUrl}}/users?page=1&limit=20
+Authorization: Bearer {{accessToken}}
+
+### إنشاء مستخدم جديد - صلاحية Admin فقط
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Employee Three",
+  "email": "employee.three@bankreach.com",
+  "password": "Password123",
+  "role": "employee"
+}
+
+### جلب مستخدم واحد بالـ ID
+GET {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{accessToken}}
+
+### تعديل مستخدم بالـ ID
+PATCH {{baseUrl}}/users/{{userId}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Employee Three Updated",
+  "isActive": true
+}
+
+### حذف مستخدم بالـ ID
+DELETE {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{accessToken}}
+
+### إنشاء عميل جديد (Customer)
+POST {{baseUrl}}/customers
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "fullName": "Ahmed Ali",
+  "phoneNumber": "+201556299899",
+  "guarantorName": "Mohamed",
+  "guarantorPhone": "+20111222333",
+  "dueDate": "2026-06-01T00:00:00Z",
+  "importedOverdueDays": 22,
+  "notes": "Preferred contact time: afternoon",
+  "tags": ["vip", "salary"]
+}
+
+### عرض العملاء مع بحث/فلترة + Pagination
+GET {{baseUrl}}/customers?page=1&limit=20&search=خالد
+Authorization: Bearer {{accessToken}}
+
+### جلب عميل واحد بالـ ID
+GET {{baseUrl}}/customers/{{customerId}}
+Authorization: Bearer {{accessToken}}
+
+### تعديل عميل بالـ ID
+PATCH {{baseUrl}}/customers/{{customerId}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "dueDate": "2026-07-01T00:00:00Z",
+  "notes": "Updated notes",
+  "tags": ["vip", "salary", "priority"]
+}
+
+### حذف عميل بالـ ID
+DELETE {{baseUrl}}/customers/{{customerId}}
+Authorization: Bearer {{accessToken}}
+
+### استيراد عملاء (Excel)
+POST {{baseUrl}}/customers/import-excel
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="bank_customers_dummy_data.xlsx"
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+
+< ./bank_customers_dummy_data.xlsx
+--boundary--
+### إنشاء قالب رسالة (Template)
+POST {{baseUrl}}/templates
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Welcome Message 8",
+  "body": "Dear {{fullName}}, your payment is overdue by {{overdueDays}} days."
+}
+
+### عرض القوالب مع بحث + Pagination
+GET {{baseUrl}}/templates?page=1&limit=20&search=Welcome
+Authorization: Bearer {{accessToken}}
+
+### جلب قالب واحد بالـ ID
+GET {{baseUrl}}/templates/{{templateId}}
+Authorization: Bearer {{accessToken}}
+
+### تعديل قالب بالـ ID
+PATCH {{baseUrl}}/templates/{{templateId}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "body": "Dear {{fullName}}, your payment is overdue by {{overdueDays}} days. Guarantor: {{guarantorName}}"
+}
+
+### حذف قالب بالـ ID
+DELETE {{baseUrl}}/templates/{{templateId}}
+Authorization: Bearer {{accessToken}}
+
+### إنشاء حملة (Campaign) باستخدام templateId + targetCustomerGroup
+POST {{baseUrl}}/campaigns
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "title": "Late Customers Campaign",
+  "templateId": "{{templateId}}",
+  "targetCustomerGroup": "{{customerGroup}}",
+  "scheduledAt": null
+}
+
+### عرض الحملات (Pagination)
+GET {{baseUrl}}/campaigns?page=1&limit=20
+Authorization: Bearer {{accessToken}}
+
+### جلب حملة واحدة بالـ ID
+GET {{baseUrl}}/campaigns/{{campaignId}}
+Authorization: Bearer {{accessToken}}
+
+### تعديل حملة (Draft/Scheduled فقط)
+PATCH {{baseUrl}}/campaigns/{{campaignId}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "title": "Late Customers Campaign (updated)"
+}
+
+### تشغيل/Trigger الحملة يدويًا
+POST {{baseUrl}}/campaigns/{{campaignId}}/trigger
+Authorization: Bearer {{accessToken}}
+
+### حذف حملة بالـ ID
+DELETE {{baseUrl}}/campaigns/{{campaignId}}
+Authorization: Bearer {{accessToken}}
+
+### عرض رسائل/Logs حملة معينة (Pagination)
+GET {{baseUrl}}/messages/campaign/{{campaignId}}?page=1&limit=20
+Authorization: Bearer {{accessToken}}
+
+### جلب Log رسالة واحد بالـ ID
+GET {{baseUrl}}/messages/{{messageId}}
+Authorization: Bearer {{accessToken}}
+
+### تقرير الداشبورد (ملخص أرقام)
+GET {{baseUrl}}/reports/dashboard
+Authorization: Bearer {{accessToken}}
+
+### تقرير أداء الحملات
+GET {{baseUrl}}/reports/campaign-performance
+Authorization: Bearer {{accessToken}}
+
+### اختبار Endpoint التحقق للـ WhatsApp Webhook (Verification)
+GET {{baseUrl}}/webhooks/whatsapp?hub_mode=subscribe&hub_verify_token={{webhookVerifyToken}}&hub_challenge=123456
+
+### إرسال Payload تجريبي للـ WhatsApp Webhook (Callback)
+POST {{baseUrl}}/webhooks/whatsapp
+Content-Type: application/json
+
+{
+  "object": "whatsapp_business_account",
+  "entry": []
+}
