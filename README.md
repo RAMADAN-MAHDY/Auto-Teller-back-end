@@ -239,6 +239,55 @@ const response = await api.post('/customers/import-excel', formData, {
 }
 ```
 
+### 4.4 تعديل عميل (Update Customer)
+- **المسار:** `PATCH /customers/{id}`
+- **ملاحظة:** يمكنك تحديث أي حقل من حقول العميل.
+
+**مثال Axios:**
+```javascript
+const response = await api.patch(`/customers/${customerId}`, {
+  fullName: "أحمد علي - محدث",
+  phoneNumber: "+201556299600"
+});
+```
+
+**الاستجابة (Response):**
+```json
+{
+  "success": true,
+  "message": "Customer updated successfully",
+  "data": {
+    "id": "6a3e1f7e3414a3e08c59f780",
+    "fullName": "أحمد علي - محدث",
+    "phoneNumber": "+201556299600",
+    "guarantorName": "محمد",
+    "guarantorPhone": "+20111222333",
+    "dueDate": "2026-06-01T00:00:00.000Z",
+    "importedOverdueDays": 22,
+    "overdueDays": 25,
+    "customerGroup": "LATE",
+    "createdAt": "2026-06-26T06:43:10.923Z",
+    "updatedAt": "2026-06-26T06:55:30.193Z"
+  }
+}
+```
+
+### 4.5 حذف عميل (Delete Customer)
+- **المسار:** `DELETE /customers/{id}`
+
+**مثال Axios:**
+```javascript
+const response = await api.delete(`/customers/${customerId}`);
+```
+
+**الاستجابة (Response):**
+```json
+{
+  "success": true,
+  "message": "Customer deleted successfully"
+}
+```
+
 ---
 
 ## 5. قوالب الرسائل (Templates)
@@ -336,9 +385,53 @@ Authorization: Bearer {{accessToken}}
 }
 ```
 
-### حذف قالب
-DELETE {{baseUrl}}/templates/{{templateId}}
-Authorization: Bearer {{accessToken}}
+### تعديل قالب (Update Template)
+- **المسار:** `PATCH /templates/{id}`
+- **ملاحظة:** يمكنك تحديث اسم القالب أو محتواه أو كليهما.
+
+**مثال Axios:**
+```javascript
+const response = await api.patch(`/templates/${templateId}`, {
+  name: "رسالة المتأخرين - محدثة",
+  body: "عزيزي {{fullName}}، نذكرك بأن قسطك متأخر لمدة {{overdueDays}} يوم. يرجى التواصل معنا."
+});
+```
+
+**الاستجابة (Response):**
+```json
+{
+  "success": true,
+  "message": "Template updated successfully",
+  "data": {
+    "id": "6a3e20423414a3e08c59f789",
+    "name": "رسالة المتأخرين - محدثة",
+    "body": "عزيزي {{fullName}}، نذكرك بأن قسطك متأخر لمدة {{overdueDays}} يوم. يرجى التواصل معنا.",
+    "variables": [
+      "fullName",
+      "overdueDays"
+    ],
+    "createdBy": "6a3e189b3414a3e08c59f764",
+    "createdAt": "2026-06-26T06:46:26.864Z",
+    "updatedAt": "2026-06-26T06:54:23.193Z"
+  }
+}
+```
+
+### حذف قالب (Delete Template)
+- **المسار:** `DELETE /templates/{id}`
+
+**مثال Axios:**
+```javascript
+const response = await api.delete(`/templates/${templateId}`);
+```
+
+**الاستجابة (Response):**
+```json
+{
+  "success": true,
+  "message": "Template deleted successfully"
+}
+```
 
 ---
 
