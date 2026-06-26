@@ -3,18 +3,30 @@ import { env } from './env.config';
 import { logger } from '../logger';
 
 function createRedisConnection(name: string, maxRetriesPerRequest: number | null): Redis {
-  const connection = new IORedis({
-    host: env.REDIS_HOST,
-    port: env.REDIS_PORT,
-    password: env.REDIS_PASSWORD || undefined,
-    maxRetriesPerRequest,
-    enableReadyCheck: true,
-    retryStrategy(times: number) {
-      const delay = Math.min(times * 200, 5000);
-      logger.warn(`🔄 Redis [${name}] retry attempt ${times}, next in ${delay}ms`);
-      return delay;
-    },
-  });
+  // const connection = new IORedis({
+  //   host: env.REDIS_HOST,
+  //   port: env.REDIS_PORT,
+  //   password: env.REDIS_PASSWORD || undefined,
+  //   maxRetriesPerRequest,
+  //   enableReadyCheck: true,
+  //   retryStrategy(times: number) {
+  //     const delay = Math.min(times * 200, 5000);
+  //     logger.warn(`🔄 Redis [${name}] retry attempt ${times}, next in ${delay}ms`);
+  //     return delay;
+  //   },
+  // });
+
+  const connection = new IORedis(env.REDIS_URL, {
+  maxRetriesPerRequest,
+  enableReadyCheck: true,
+  retryStrategy(times) {
+    const delay = Math.min(times * 200, 5000);
+    logger.warn(
+      `🔄 Redis [${name}] retry attempt ${times}, next in ${delay}ms`
+    );
+    return delay;
+  },
+});
 
   connection.on('connect', () => {
     logger.info(`🔴 Redis [${name}] connected`);
