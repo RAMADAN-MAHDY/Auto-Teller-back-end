@@ -182,11 +182,12 @@ const response = await api.post('/customers/import-excel', formData, {
 ```json
 {
   "success": true,
-  "message": "Import completed successfully",
+  "message": "Customer import process completed",
   "data": {
-    "imported": 50,
-    "updated": 10,
-    "failed": 2
+    "imported": 0,
+    "updated": 30,
+    "failed": 0,
+    "errors": []
   }
 }
 ```
