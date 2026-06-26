@@ -53,27 +53,6 @@ export default api;
 }
 ```
 
-### 2.3 حالة القوائم والترقيم (Pagination Response)
-أي Endpoint يرجع قائمة بيانات (مثل جلب العملاء أو الحملات) سيرجع بيانات الترقيم (Pagination) بالشكل التالي:
-```json
-{
-  "success": true,
-  "message": "Customers retrieved successfully",
-  "data": {
-    "docs": [ { ... }, { ... } ], // مصفوفة البيانات الفعلية
-    "totalDocs": 100,
-    "limit": 20,
-    "totalPages": 5,
-    "page": 1,
-    "pagingCounter": 1,
-    "hasPrevPage": false,
-    "hasNextPage": true,
-    "prevPage": null,
-    "nextPage": 2
-  }
-}
-```
-
 ---
 
 ## 3. المصادقة (Authentication)
@@ -103,8 +82,10 @@ const response = await api.post('/auth/login', {
       "role": "admin",
       "isActive": true
     },
+"tokens" : {
     "accessToken": "eyJhbGci...",
     "refreshToken": "eyJhbGci..."
+}
   }
 }
 ```
@@ -122,36 +103,43 @@ const response = await api.post('/auth/login', {
 ```javascript
 // جلب العملاء المتأخرين (LATE) في الصفحة الأولى
 const response = await api.get('/customers', {
-  params: { page: 1, limit: 20, search: 'أحمد', customerGroup: 'LATE' }
+  params: { page: 1, limit: 20, search: 'ramadan mahdy', customerGroup: 'LATE' }
 });
 ```
 
 **الاستجابة (Response):**
 ```json
+
 {
   "success": true,
-  "data": {
-    "docs": [
-      {
-        "id": "6a3a2d...",
-        "fullName": "أحمد علي",
-        "phoneNumber": "+201556299599",
-        "guarantorName": "محمد",
-        "guarantorPhone": "+20111222333",
-        "dueDate": "2026-06-01T00:00:00.000Z",
-        "importedOverdueDays": 22,
-        "overdueDays": 24,
-        "customerGroup": "LATE", // COMPLIANT | LATE | DEFAULTED | TRANSFERRED
-        "notes": "يفضل الاتصال مساءً",
-        "tags": ["vip"],
-        "createdAt": "2026-06-25T00:00:00Z"
-      }
-    ],
-    "totalDocs": 1,
+  "message": "Customers retrieved successfully",
+  "data": [
+    {
+      "id": "6a3e1f7e3414a3e08c59f780",
+      "fullName": "ramadan mahdy",
+      "phoneNumber": "+201556299599",
+      "guarantorName": "Mohamed",
+      "guarantorPhone": "+20111222333",
+      "dueDate": "2026-06-01T00:00:00.000Z",
+      "importedOverdueDays": 22,
+      "overdueDays": 25,
+      "customerGroup": "LATE",
+      "notes": "Preferred contact time: afternoon",
+      "tags": [
+        "vip",
+        "salary"
+      ],
+      "createdAt": "2026-06-26T06:43:10.923Z",
+      "updatedAt": "2026-06-26T06:43:10.923Z"
+    }
+  ],
+  "meta": {
     "page": 1,
     "limit": 20,
+    "total": 1,
     "totalPages": 1,
-    ...
+    "hasNextPage": false,
+    "hasPrevPage": false
   }
 }
 ```
@@ -194,11 +182,12 @@ const response = await api.post('/customers/import-excel', formData, {
 ```json
 {
   "success": true,
-  "message": "Import completed successfully",
+  "message": "Customer import process completed",
   "data": {
-    "imported": 50,
-    "updated": 10,
-    "failed": 2
+    "imported": 0,
+    "updated": 30,
+    "failed": 0,
+    "errors": []
   }
 }
 ```
@@ -223,17 +212,91 @@ const response = await api.post('/templates', {
 ```json
 {
   "success": true,
+  "message": "Template created successfully",
   "data": {
-    "id": "6a3a2f...",
-    "name": "رسالة المتأخرين",
-    "body": "عزيزي {{fullName}}، نذكرك بأن قسطك متأخر لمدة {{overdueDays}} يوم.",
-    "variables": ["fullName", "overdueDays"],
-    "createdAt": "2026-06-25T00:00:00Z"
+    "id": "6a3e20423414a3e08c59f789",
+    "name": "Welcome Message 8",
+    "body": "Dear {{fullName}}, your payment is overdue by {{overdueDays}} days.",
+    "variables": [
+      "fullName",
+      "overdueDays"
+    ],
+    "createdBy": "6a3e189b3414a3e08c59f764",
+    "createdAt": "2026-06-26T06:46:26.864Z",
+    "updatedAt": "2026-06-26T06:46:26.864Z"
   }
 }
 ```
 
 ---
+### جلب القوالب
+
+### عرض القوالب مع بحث + Pagination
+GET {{baseUrl}}/templates?page=1&limit=20&search=Welcome
+Authorization: Bearer {{accessToken}}
+
+**الاستجابة (Response):**
+```json
+
+{
+  "success": true,
+  "message": "Templates retrieved successfully",
+  "data": [
+    {
+      "id": "6a3e20423414a3e08c59f789",
+      "name": "Welcome Message 8",
+      "body": "Dear {{fullName}}, your payment is overdue by {{overdueDays}} days.",
+      "variables": [
+        "fullName",
+        "overdueDays"
+      ],
+      "createdBy": "{\n  _id: new ObjectId('6a3e189b3414a3e08c59f764'),\n  email: 'admin_2@bankreach.com'\n}",
+      "createdAt": "2026-06-26T06:46:26.864Z",
+      "updatedAt": "2026-06-26T06:46:26.864Z"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "totalPages": 1,
+    "hasNextPage": false,
+    "hasPrevPage": false
+  }
+}
+```
+### جلب قالب واحد بالـ ID
+GET {{baseUrl}}/templates/{{templateId}}
+Authorization: Bearer {{accessToken}}
+**الاستجابة (Response):**
+```json
+
+{
+  "success": true,
+  "message": "Template retrieved successfully",
+  "data": {
+    "id": "6a3e20423414a3e08c59f789",
+    "name": "Welcome Message 8",
+    "body": "Dear {{fullName}}, your payment is overdue by {{overdueDays}} days.",
+    "variables": [
+      "fullName",
+      "overdueDays"
+    ],
+    "createdBy": "{\n  _id: new ObjectId('6a3e189b3414a3e08c59f764'),\n  email: 'admin_2@bankreach.com'\n}",
+    "createdAt": "2026-06-26T06:46:26.864Z",
+    "updatedAt": "2026-06-26T06:46:26.864Z"
+  }
+}
+```
+
+### حذف قالب
+DELETE {{baseUrl}}/templates/{{templateId}}
+Authorization: Bearer {{accessToken}}
+
+---
+
+
+
 
 ## 6. الحملات (Campaigns)
 
@@ -255,24 +318,157 @@ const response = await api.post('/campaigns', {
 ```json
 {
   "success": true,
+  "message": "Campaign created successfully",
   "data": {
-    "id": "6a3a4a...",
-    "title": "حملة المتأخرين شهر 6",
-    "template": { "id": "...", "name": "رسالة المتأخرين" },
+    "id": "6a3e221f3414a3e08c59f790",
+    "title": "Late Customers Campaign",
+    "template": {
+      "id": "6a3e20423414a3e08c59f789",
+      "name": "Welcome Message 8"
+    },
     "targetCustomerGroup": "LATE",
-    "status": "draft", // الحالات: draft, scheduled, running, completed, failed
+    "status": "draft",
+    "createdBy": {
+      "id": "6a3e189b3414a3e08c59f764",
+      "fullName": "Admin"
+    },
     "stats": {
       "total": 0,
       "sent": 0,
       "delivered": 0,
       "read": 0,
       "failed": 0
+    },
+    "createdAt": "2026-06-26T06:54:23.193Z",
+    "updatedAt": "2026-06-26T06:54:23.193Z"
+  }
+}
+```
+### عرض الحملات (Pagination)
+GET {{baseUrl}}/campaigns?page=1&limit=20
+Authorization: Bearer {{accessToken}}
+
+**الاستجابة (Response):**
+
+```json
+
+{
+  "success": true,
+  "message": "Campaigns retrieved successfully",
+  "data": [
+    {
+      "id": "6a3e221f3414a3e08c59f790",
+      "title": "Late Customers Campaign",
+      "template": {
+        "id": "6a3e20423414a3e08c59f789",
+        "name": "Welcome Message 8"
+      },
+      "targetCustomerGroup": "LATE",
+      "status": "draft",
+      "createdBy": {
+        "id": "6a3e189b3414a3e08c59f764",
+        "fullName": "Admin"
+      },
+      "stats": {
+        "total": 0,
+        "sent": 0,
+        "delivered": 0,
+        "read": 0,
+        "failed": 0
+      },
+      "createdAt": "2026-06-26T06:54:23.193Z",
+      "updatedAt": "2026-06-26T06:54:23.193Z"
     }
+  ],
+  "meta": {
+    "total": 1,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 1,
+    "hasNextPage": false,
+    "hasPrevPage": false
+  }
+}
+```
+### تعديل حملة (Draft/Scheduled فقط)
+PATCH {{baseUrl}}/campaigns/{{campaignId}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "title": "Late Customers Campaign (updated)"
+}
+
+**الاستجابة (Response):**
+```json
+{
+  "success": true,
+  "message": "Campaign updated successfully",
+  "data": {
+    "id": "6a3e221f3414a3e08c59f790",
+    "title": "Late Customers Campaign (updated)",
+    "template": {
+      "id": "6a3e20423414a3e08c59f789",
+      "name": "Welcome Message 8"
+    },
+    "targetCustomerGroup": "LATE",
+    "status": "draft",
+    "createdBy": {
+      "id": "6a3e189b3414a3e08c59f764",
+      "fullName": "Admin"
+    },
+    "stats": {
+      "total": 0,
+      "sent": 0,
+      "delivered": 0,
+      "read": 0,
+      "failed": 0
+    },
+    "createdAt": "2026-06-26T06:54:23.193Z",
+    "updatedAt": "2026-06-26T06:58:29.874Z"
+  }
+}
+```
+### جلب حملة واحدة بالـ ID
+GET {{baseUrl}}/campaigns/{{campaignId}}
+Authorization: Bearer {{accessToken}}
+
+**الاستجابة (Response):**
+```json
+
+{
+  "success": true,
+  "message": "Campaign retrieved successfully",
+  "data": {
+    "id": "6a3e221f3414a3e08c59f790",
+    "title": "Late Customers Campaign (updated)",
+    "template": {
+      "id": "6a3e20423414a3e08c59f789",
+      "name": "Welcome Message 8"
+    },
+    "targetCustomerGroup": "LATE",
+    "status": "running",
+    "createdBy": {
+      "id": "6a3e189b3414a3e08c59f764",
+      "fullName": "Admin"
+    },
+    "stats": {
+      "total": 0,
+      "sent": 0,
+      "delivered": 0,
+      "read": 0,
+      "failed": 0
+    },
+    "createdAt": "2026-06-26T06:54:23.193Z",
+    "updatedAt": "2026-06-26T07:00:04.218Z"
   }
 }
 ```
 
-### 6.2 تشغيل الحملة يدوياً (Trigger Campaign)
+
+
+
+###  تشغيل الحملة يدوياً (Trigger Campaign)
 - **المسار:** `POST /campaigns/:id/trigger`
 - **الغرض:** إذا كانت الحملة بحالة `draft` ولم تكن مجدولة، يمكنك تشغيلها فوراً بهذا الطلب لتبدأ بإرسال الرسائل.
 
@@ -280,6 +476,9 @@ const response = await api.post('/campaigns', {
 ```javascript
 await api.post(`/campaigns/${campaignId}/trigger`);
 ```
+### حذف حملة بالـ ID
+DELETE {{baseUrl}}/campaigns/{{campaignId}}
+Authorization: Bearer {{accessToken}}
 
 ---
 
@@ -298,25 +497,27 @@ const response = await api.get('/reports/dashboard');
 ```json
 {
   "success": true,
+  "message": "Dashboard stats retrieved successfully",
   "data": {
-    "totalUsers": 5,
-    "totalCustomers": 1200,
+    "totalUsers": 2,
+    "totalCustomers": 1,
     "totalGroups": 4,
-    "totalTemplates": 10,
+    "totalTemplates": 1,
     "totalCampaigns": {
-      "total": 15,
-      "draft": 2,
-      "scheduled": 1,
-      "running": 0,
-      "completed": 12,
+      "total": 2,
+      "draft": 1,
+      "scheduled": 0,
+      "running": 1,
+      "completed": 0,
       "failed": 0
     },
     "messageStats": {
-      "total": 5000,
-      "sent": 4900,
-      "delivered": 4500,
-      "read": 4000,
-      "failed": 100
+      "total": 0,
+      "pending": 0,
+      "sent": 0,
+      "delivered": 0,
+      "read": 0,
+      "failed": 0
     }
   }
 }
@@ -333,16 +534,18 @@ const response = await api.get('/reports/campaign-performance');
 
 **الاستجابة (Response):**
 ```json
+
 {
   "success": true,
+  "message": "Campaign performance report retrieved successfully",
   "data": [
     {
-      "campaignId": "6a3a4a...",
-      "title": "حملة المتأخرين شهر 6",
-      "totalMessages": 100,
-      "successRate": 95.5,
-      "deliveryRate": 90.0,
-      "readRate": 80.0
+      "campaignId": "6a3e221f3414a3e08c59f790",
+      "title": "Late Customers Campaign (updated)",
+      "totalMessages": 0,
+      "successRate": 0,
+      "deliveryRate": 0,
+      "readRate": 0
     }
   ]
 }
