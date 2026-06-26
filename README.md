@@ -103,7 +103,7 @@ const response = await api.post('/auth/login', {
 ```javascript
 // جلب العملاء المتأخرين (LATE) في الصفحة الأولى
 const response = await api.get('/customers', {
-  params: { page: 1, limit: 20, search: 'أحمد', customerGroup: 'LATE' }
+  params: { page: 1, limit: 20, search: 'ramadan mahdy', customerGroup: 'LATE' }
 });
 ```
 
