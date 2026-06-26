@@ -83,7 +83,7 @@ const customerSchema = new Schema<ICustomer>(
 );
 
 // Indexes
-customerSchema.index({ phoneNumber: 1 }, { unique: true });
+// Note: phoneNumber already has unique: true in schema definition
 customerSchema.index({ customerGroup: 1 });
 customerSchema.index({ dueDate: 1 });
 customerSchema.index({ fullName: 'text' });
