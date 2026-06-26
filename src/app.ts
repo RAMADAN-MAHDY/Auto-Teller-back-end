@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import express, { Application, Request, Response } from 'express';
+import { createServer } from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
@@ -11,6 +12,7 @@ import { disconnectRedis } from './configs/redis.config';
 import { swaggerSpec } from './configs/swagger.config';
 import { logger } from './logger';
 import { QueueService } from './queues/queue.service';
+import { WebSocketServer } from './websocket/websocket.server';
 
 // Middlewares
 import {
@@ -32,6 +34,7 @@ import webhookRoutes from './modules/webhooks/webhook.routes';
 import reportRoutes from './modules/reports/report.routes';
 
 const app: Application = express();
+const httpServer = createServer(app);
 
 // 1. Establish Database Connection
 connectDatabase();
@@ -41,7 +44,12 @@ const queueService = Container.get(QueueService);
 queueService.init();
 queueService.startSchedulerCron();
 
+// 3. Initialize WebSocket Server
+const webSocketServer = Container.get(WebSocketServer);
+webSocketServer.initialize(httpServer);
+
 // 3. Global Security and Logging Middlewares
+// console.log('CORS_ORIGIN:', env.CORS_ORIGIN);
 app.use(helmet());
 app.use(
   cors({
@@ -85,8 +93,9 @@ app.get('/health', (req: Request, res: Response) => {
 app.use(errorHandler);
 
 // 7. Start Listening
-const server = app.listen(env.PORT, () => {
+const server = httpServer.listen(env.PORT, () => {
   logger.info(`🚀 Server running in ${env.NODE_ENV} mode on port ${env.PORT}`);
+  logger.info(`🔌 WebSocket server initialized on port ${env.PORT}`);
 });
 
 // 8. Graceful Shutdown Handlers

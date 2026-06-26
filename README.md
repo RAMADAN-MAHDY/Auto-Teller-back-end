@@ -6,15 +6,17 @@
 
 الرابط الأساسي (Base URL) لجميع الـ Endpoints هو:
 `/api/v1`
-
-### إعداد Axios
-يفضل عمل `axios instance` يضيف الـ `Authorization` header تلقائياً لكل الطلبات لتجنب تكرار الكود.
+  
+### إعداد Axios و WebSocket
+يفضل عمل `axios instance` يضيف الـ `Authorization` header تلقائياً لكل الطلبات لتجنب تكرار الكود، وإنشاء اتصال WebSocket للتحديثات اللحظية.
 
 ```javascript
 import axios from 'axios';
+import { io } from 'socket.io-client';
 
+// 1. إعداد Axios للطلبات العادية
 const api = axios.create({
-  baseURL: 'https://0946-197-133-64-172.ngrok-free.app/api/v1',
+  baseURL: 'https://auto-teller-back-end-production.up.railway.app/api/v1',
 });
 
 // إضافة التوكن في كل طلب
@@ -25,6 +27,51 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// 2. إعداد WebSocket للتحديثات اللحظية
+let socket = null;
+
+export function initWebSocket(token) {
+  socket = io('https://auto-teller-back-end-production.up.railway.app', {
+    transports: ['websocket', 'polling'],
+    auth: { token }
+  });
+
+  // إعداد مستمعي الأحداث
+  socket.on('connect', () => {
+    console.log('✅ Connected to WebSocket server');
+  });
+
+  socket.on('campaign-update', (data) => {
+    console.log('📢 Campaign update:', data);
+    // يمكنك إضافة معالجة الأحداث هنا
+  });
+
+  return socket;
+}
+
+// دوال مساعدة للـ WebSocket
+export function joinCampaignRoom(campaignId) {
+  if (socket) {
+    socket.emit('join-campaign', campaignId);
+    console.log(`🔗 Joined campaign room: ${campaignId}`);
+  }
+}
+
+export function subscribeToUserCampaigns(userId) {
+  if (socket) {
+    socket.emit('subscribe-user-campaigns', userId);
+    console.log(`👤 Subscribed to user campaigns: ${userId}`);
+  }
+}
+
+export function disconnectWebSocket() {
+  if (socket) {
+    socket.disconnect();
+    socket = null;
+    console.log('🔌 Disconnected from WebSocket server');
+  }
+}
 
 export default api;
 ```
@@ -550,3 +597,217 @@ const response = await api.get('/reports/campaign-performance');
   ]
 }
 ```
+
+---
+
+## 8. تحديثات الحملات اللحظية عبر WebSocket
+
+تم إضافة WebSocket server إلى النظام لتمكين تحديثات الحملات لحظيًا. يتيح ذلك للمستخدمين رؤية تقدم الحملات في الوقت الفعلي دون الحاجة لتحديث الصفحة.
+
+### 8.1 تثبيت socket.io-client في Frontend
+
+```bash
+npm install socket.io-client
+```
+
+### 8.2 إنشاء اتصال WebSocket
+
+```javascript
+import { io } from 'socket.io-client';
+
+const socket = io('https://auto-teller-back-end-production.up.railway.app', {
+  transports: ['websocket', 'polling'],
+  auth: {
+    token: 'your-jwt-token' // استخدم التوكن من localStorage
+  }
+});
+```
+
+### 8.3 الأحداث المتاحة
+
+| الحدث | الوصف | مثال البيانات |
+|-------|-------|---------------|
+| `campaign-update` | تحديث لحملة محددة | `{campaignId, status, progress, message, timestamp}` |
+| `campaign-global-update` | تحديث عام لجميع الحملات | نفس هيكل campaign-update |
+| `campaign-stats` | إحصائيات الحملة | `{campaignId, title, status, totalCustomers, ...}` |
+
+### 8.4 مثال كامل للاستخدام في React
+
+```javascript
+import { useEffect, useState } from 'react';
+import { io } from 'socket.io-client';
+
+function CampaignMonitor({ campaignId, token }) {
+  const [progress, setProgress] = useState(null);
+  const [status, setStatus] = useState('idle');
+
+  useEffect(() => {
+    const socket = io('https://auto-teller-back-end-production.up.railway.app', {
+      transports: ['websocket', 'polling'],
+      auth: { token }
+    });
+
+    socket.on('connect', () => {
+      console.log('✅ Connected to WebSocket server');
+      socket.emit('join-campaign', campaignId);
+    });
+
+    socket.on('campaign-update', (data) => {
+      console.log('📢 Campaign update:', data);
+      setStatus(data.status);
+      if (data.progress) {
+        setProgress(data.progress);
+      }
+    });
+
+    socket.on('campaign-stats', (stats) => {
+      console.log('📊 Campaign stats:', stats);
+      // تحديث المخططات البيانية
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [campaignId, token]);
+
+  return (
+    <div>
+      <h3>حالة الحملة: {status}</h3>
+      {progress && (
+        <div>
+          <p>التقدم: {progress.processed}/{progress.total}</p>
+          <p>الرسائل المرسلة: {progress.sent}</p>
+          <p>الرسائل الفاشلة: {progress.failed}</p>
+          <progress value={progress.processed} max={progress.total} />
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### 8.5 مثال لتحديث axios instance
+
+```javascript
+import axios from 'axios';
+import { io } from 'socket.io-client';
+
+const api = axios.create({
+  baseURL: 'https://auto-teller-back-end-production.up.railway.app/api/v1',
+});
+
+// إضافة التوكن في كل طلب
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// إنشاء WebSocket connection
+let socket = null;
+
+export function initWebSocket(token) {
+  socket = io('https://auto-teller-back-end-production.up.railway.app', {
+    transports: ['websocket', 'polling'],
+    auth: { token }
+  });
+
+  return socket;
+}
+
+export function joinCampaignRoom(campaignId) {
+  if (socket) {
+    socket.emit('join-campaign', campaignId);
+  }
+}
+
+export function subscribeToUserCampaigns(userId) {
+  if (socket) {
+    socket.emit('subscribe-user-campaigns', userId);
+  }
+}
+
+export default api;
+```
+
+### 8.6 حالات الحملة (Status)
+
+| الحالة | الوصف |
+|--------|-------|
+| `started` | بدأت الحملة |
+| `in-progress` | الحملة قيد التنفيذ |
+| `completed` | اكتملت الحملة |
+| `error` | حدث خطأ في الحملة |
+
+### 8.7 هيكل بيانات التقدم (Progress Structure)
+
+```javascript
+{
+  total: 100,      // إجمالي العملاء المستهدفين
+  processed: 45,   // عدد العملاء الذين تم معالجتهم
+  sent: 40,        // عدد الرسائل المرسلة بنجاح
+  failed: 5        // عدد الرسائل الفاشلة
+}
+```
+
+### 8.8 فوائد استخدام WebSocket
+
+1. **تحديثات لحظية**: رؤية تقدم الحملات في الوقت الفعلي
+2. **بدون تحديث الصفحة**: لا حاجة لتحديث الصفحة يدويًا
+3. **كفاءة الأداء**: اتصال واحد لجميع التحديثات
+4. **تجربة مستخدم محسنة**: إشعارات فورية عن حالة الحملات
+
+### 8.9 ملفات الأمثلة
+
+يمكنك العثور على أمثلة كاملة في:
+- `src/websocket/websocket-client-example.js` - مثال كامل للاستخدام
+- `src/websocket/WEBSOCKET_API.md` - توثيق مفصل للـ API
+
+---
+
+## 9. استكشاف الأخطاء وإصلاحها
+
+### 9.1 مشاكل WebSocket الشائعة
+
+1. **لا يتم استقبال التحديثات**:
+   - تحقق من اتصال WebSocket (`socket.connected`)
+   - تأكد من الانضمام للغرفة الصحيحة
+   - تحقق من تطابق campaignId
+
+2. **اتصال متقطع**:
+   - تفعيل إعادة الاتصال التلقائي
+   - التحقق من إعدادات الشبكة
+   - مراقبة استخدام الذاكرة
+
+3. **مشاكل التوكن**:
+   - تأكد من صلاحية التوكن
+   - أعد تسجيل الدخول إذا انتهت صلاحية التوكن
+   - استخدم refreshToken لتجديد التوكن
+
+### 9.2 نصائح للتصحيح (Debugging)
+
+```javascript
+// تفعيل logging لـ WebSocket
+socket.onAny((event, ...args) => {
+  console.log(`🔍 WebSocket event: ${event}`, args);
+});
+
+// التحقق من حالة الاتصال
+console.log('Socket connected:', socket.connected);
+console.log('Socket ID:', socket.id);
+```
+
+---
+
+## 10. المراجع والمصادر
+
+- [Socket.io Documentation](https://socket.io/docs/v4/)
+- [WebSocket Protocol](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
+- [Real-time Applications Best Practices](https://ably.com/blog/websocket-authentication)
+- [BankReach WebSocket API Documentation](src/websocket/WEBSOCKET_API.md)
+
+---
+
+**ملاحظة**: تم تصميم النظام لدعم آلاف الرسائل في الوقت الفعلي مع الحفاظ على الأداء العالي. يمكن توسيع النظام بسهولة لإضافة ميزات جديدة مثل الدردشة المباشرة أو الإشعارات المخصصة.

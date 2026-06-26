@@ -117,3 +117,130 @@ graph LR
 * **Redis & BullMQ:** لإدارة طوابير إرسال الرسائل (Message Queues) والمهام المجدولة (Cron Jobs) في الخلفية، مما يضمن أداء سريع للسيرفر حتى مع إرسال آلاف الرسائل.
 * **ExcelJS:** لقراءة ملفات الإكسل واستخراج بيانات العملاء منها بكفاءة.
 * **Zod:** للتحقق من صحة جميع البيانات المُدخلة من الواجهة الأمامية أو من ملفات الإكسل.
+* **Socket.io:** لتحديثات الحملات اللحظية عبر WebSocket.
+
+---
+
+## 6. تحديثات الحملات اللحظية عبر WebSocket
+
+تم إضافة WebSocket server إلى النظام لتمكين تحديثات الحملات لحظيًا. يتيح ذلك للمستخدمين رؤية تقدم الحملات في الوقت الفعلي دون الحاجة لتحديث الصفحة.
+
+### 6.1 تدفق عمل WebSocket
+
+```mermaid
+sequenceDiagram
+    participant F as Frontend
+    participant WS as WebSocket Server
+    participant CS as Campaign Service
+    participant DB as قاعدة البيانات
+
+    F->>WS: الاتصال بـ WebSocket مع التوكن
+    WS-->>F: ✅ Connected
+    
+    F->>WS: join-campaign (campaignId)
+    WS->>CS: إشعار بدء الحملة
+    
+    loop أثناء تنفيذ الحملة
+        CS->>WS: تحديث التقدم (progress)
+        WS->>F: campaign-update event
+        F->>F: تحديث واجهة المستخدم
+    end
+    
+    CS->>WS: إشعار اكتمال الحملة
+    WS->>F: campaign-completed event
+    F->>F: عرض النتائج النهائية
+```
+
+### 6.2 أحداث WebSocket المتاحة
+
+| الحدث | الوصف | متى يتم إرساله |
+|-------|-------|----------------|
+| `campaign-update` | تحديث لحملة محددة | عند بدء/تقدم/اكتمال/خطأ الحملة |
+| `campaign-global-update` | تحديث عام لجميع الحملات | عند أي تغيير في أي حملة |
+| `campaign-stats` | إحصائيات الحملة | عند اكتمال الحملة أو طلب الإحصائيات |
+
+### 6.3 هيكل بيانات التحديث
+
+```javascript
+{
+  campaignId: "6a3e221f3414a3e08c59f790",
+  status: "in-progress", // started, in-progress, completed, error
+  progress: {
+    total: 100,      // إجمالي العملاء المستهدفين
+    processed: 45,   // عدد العملاء الذين تم معالجتهم
+    sent: 40,        // عدد الرسائل المرسلة بنجاح
+    failed: 5        // عدد الرسائل الفاشلة
+  },
+  message: "جاري إرسال الرسائل...",
+  timestamp: "2026-06-26T08:30:00Z"
+}
+```
+
+### 6.4 مثال للاستخدام في Frontend
+
+```javascript
+// 1. الاتصال بـ WebSocket
+const socket = io('https://your-server.com', {
+  transports: ['websocket', 'polling'],
+  auth: { token: 'jwt-token' }
+});
+
+// 2. الانضمام لغرفة الحملة
+socket.emit('join-campaign', 'campaign-id-123');
+
+// 3. الاستماع للتحديثات
+socket.on('campaign-update', (data) => {
+  console.log('تحديث الحملة:', data);
+  
+  // تحديث واجهة المستخدم بناءً على الحالة
+  switch(data.status) {
+    case 'started':
+      showNotification(`بدأت الحملة: ${data.message}`);
+      break;
+    case 'in-progress':
+      updateProgressBar(data.progress);
+      break;
+    case 'completed':
+      showSuccess(`اكتملت الحملة بنجاح!`);
+      break;
+    case 'error':
+      showError(`حدث خطأ: ${data.message}`);
+      break;
+  }
+});
+
+// 4. الاستماع للإحصائيات
+socket.on('campaign-stats', (stats) => {
+  updateCharts(stats);
+});
+```
+
+### 6.5 فوائد WebSocket في النظام
+
+1. **تجربة مستخدم محسنة**: تحديثات لحظية دون الحاجة لتحديث الصفحة
+2. **مراقبة أفضل**: متابعة تقدم الحملات في الوقت الفعلي
+3. **كفاءة عالية**: اتصال واحد لجميع التحديثات
+4. **قابلية التوسع**: دعم آلاف المستخدمين المتصلين في نفس الوقت
+
+### 6.6 التكامل مع النظام الحالي
+
+```mermaid
+graph LR
+    A[واجهة المستخدم - Frontend] -->|HTTP Requests| B(API Server)
+    A -->|WebSocket Connection| C(WebSocket Server)
+    B --> D[(قاعدة البيانات)]
+    C --> D
+    B --> E[Campaign Service]
+    E --> C
+    E --> F[Queue Service]
+    F --> G[Meta WhatsApp API]
+    
+    style C fill:#e1f5fe
+    style A fill:#f3e5f5
+```
+
+### 6.7 ملفات التوثيق والأمثلة
+
+- `src/websocket/websocket-client-example.js` - مثال كامل للاستخدام
+- `src/websocket/WEBSOCKET_API.md` - توثيق مفصل للـ API
+- `README.md#8` - دليل التكامل مع Frontend

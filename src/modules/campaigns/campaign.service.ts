@@ -7,12 +7,14 @@ import { IPaginatedResult } from '../../common/interfaces';
 import { ICampaign } from './campaign.model';
 import { CampaignStatus, CustomerGroup } from '../../common/constants';
 import { QueueService } from '../../queues/queue.service';
+import { CampaignWebSocketService } from '../../websocket/campaign-websocket.service';
 import { logger } from '../../logger';
 
 @Service()
 export class CampaignService {
   private readonly campaignRepository = Container.get(CampaignRepository);
   private readonly queueService = Container.get(QueueService);
+  private readonly campaignWebSocketService = Container.get(CampaignWebSocketService);
 
   async create(dto: CreateCampaignDto, userId: string): Promise<CampaignResponseDto> {
     const status = dto.scheduledAt ? CampaignStatus.SCHEDULED : CampaignStatus.DRAFT;
@@ -113,6 +115,14 @@ export class CampaignService {
     }
 
     await this.campaignRepository.updateStatus(id, CampaignStatus.RUNNING);
+    
+    // إرسال إشعار بدء الحملة عبر WebSocket
+    this.campaignWebSocketService.notifyCampaignStarted(
+      campaign.id,
+      campaign.title,
+      campaign.createdBy.toString()
+    );
+    
     await this.queueService.queueCampaign(id);
 
     logger.info(`Campaign triggered manually: ${campaign.title}`);

@@ -1,14 +1,14 @@
-@host = https://0946-197-133-64-172.ngrok-free.app
-@baseUrl = https://0946-197-133-64-172.ngrok-free.app/api/v1
+@host = https://auto-teller-back-end-production.up.railway.app
+@baseUrl = https://auto-teller-back-end-production.up.railway.app/api/v1
 
-@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTNhMjYwZjE0NTY5MTUzZWE2ZGJhOTEiLCJlbWFpbCI6ImFkbWluQGJhbmtyZWFjaC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODIzNzgyMDcsImV4cCI6MTc4MjM5NjIwN30.MABUDvhDEjbGsVDN2nq73b1eszyf3vfpTCRnS9yV_bI
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTNlMTg5YjM0MTRhM2UwOGM1OWY3NjQiLCJlbWFpbCI6ImFkbWluXzJAYmFua3JlYWNoLmNvbSIsInJvbGUiOiJlbXBsb3llZSIsImlhdCI6MTc4MjQ1ODA0MCwiZXhwIjoxNzgyNDU4OTQwfQ.0ezXF1nOQ_Dc_M330yIzMsoO-2H-hKyEnEsXbeoQgrc
 @refreshToken =
 
-@userId = 6a3cef01fd4f9b376c75daf3
+@userId = 6a3e129b3414a3e08c59f758
 @customerId =6a3a2fb218cae4e4ceb3f71a
 @customerGroup = LATE
-@templateId = 6a3a2fe118cae4e4ceb3f71f
-@campaignId =6a3cf1a8fd4f9b376c75db37
+@templateId = 6a3e20423414a3e08c59f789
+@campaignId =6a3e221f3414a3e08c59f790
 @messageId = 6a3a4abc84ccb4fad13566b9
 
 @webhookVerifyToken = BankReach_Webhook_Verify_2026_Secret
@@ -22,8 +22,9 @@ Content-Type: application/json
 
 {
   "name": "Admin",
-  "email": "admin@bankreach.com",
-  "password": "Password123"
+  "email": "admin_2@bankreach.com",
+  "password": "Password123",
+  "role": "admin"
 }
 
 ### تسجيل دخول (Login) - بيرجع accessToken + refreshToken
@@ -31,7 +32,7 @@ POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-  "email": "admin@bankreach.com",
+  "email": "admin_2@bankreach.com",
   "password": "Password123"
 }
 
@@ -69,8 +70,7 @@ Content-Type: application/json
 Authorization: Bearer {{accessToken}}
 
 {
-  "name": "Employee Three Updated",
-  "isActive": true
+  "role": "admin",
 }
 
 ### حذف مستخدم بالـ ID
@@ -83,18 +83,16 @@ Content-Type: application/json
 Authorization: Bearer {{accessToken}}
 
 {
-  "fullName": "Ahmed Ali",
-  "phoneNumber": "+201556299899",
+  "fullName": "ramadan mahdy",
+  "phoneNumber": "+201021256762",
   "guarantorName": "Mohamed",
-  "guarantorPhone": "+20111222333",
+  "guarantorPhone": "+20111222233",
   "dueDate": "2026-06-01T00:00:00Z",
-  "importedOverdueDays": 22,
-  "notes": "Preferred contact time: afternoon",
-  "tags": ["vip", "salary"]
+  "importedOverdueDays": 22
 }
 
 ### عرض العملاء مع بحث/فلترة + Pagination
-GET {{baseUrl}}/customers?page=1&limit=20&search=خالد
+GET {{baseUrl}}/customers?page=1&limit=20&search=ramadan mahdy
 Authorization: Bearer {{accessToken}}
 
 ### جلب عميل واحد بالـ ID

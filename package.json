@@ -19,6 +19,7 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
+    "@types/socket.io": "^3.0.1",
     "axios": "^1.7.0",
     "bcryptjs": "^2.4.3",
     "bullmq": "^5.25.0",
@@ -38,6 +39,7 @@
     "morgan": "^1.10.0",
     "multer": "^2.2.0",
     "reflect-metadata": "^0.2.2",
+    "socket.io": "^4.8.3",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "typedi": "^0.10.0",
