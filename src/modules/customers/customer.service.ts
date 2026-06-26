@@ -48,7 +48,7 @@ export class CustomerService {
         const { overdueDays, customerGroup } = calculateCustomerGroupAndOverdueDays(dueDate);
 
         // 3. Process tags (comma-separated string to array)
-        const tagsArray = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
+        // const tagsArray = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
 
         // 4. Prepare customer data for upsert
         const customerToUpsert: Partial<ICustomer> = {
@@ -60,8 +60,8 @@ export class CustomerService {
           importedOverdueDays: data.importedOverdueDays,
           overdueDays: overdueDays,
           customerGroup: customerGroup,
-          notes: data.notes || undefined,
-          tags: tagsArray,
+          // notes: data.notes || undefined,
+          // tags: tagsArray,
         };
 
         // 5. Upsert customer by phone number
@@ -93,9 +93,9 @@ export class CustomerService {
     if (query.customerGroup) {
       filter.customerGroup = query.customerGroup;
     }
-    if (query.tag) {
-      filter.tags = { $in: [query.tag] };
-    }
+    // if (query.tag) {
+    //   filter.tags = { $in: [query.tag] };
+    // }
 
     const result = await this.customerRepository.findPaginated(filter, {
       page: query.page,
@@ -163,8 +163,8 @@ export class CustomerService {
       importedOverdueDays: customer.importedOverdueDays,
       overdueDays: customer.overdueDays,
       customerGroup: customer.customerGroup,
-      notes: customer.notes,
-      tags: customer.tags,
+      // notes: customer.notes,
+      // tags: customer.tags,
       createdAt: customer.createdAt,
       updatedAt: customer.updatedAt,
     };

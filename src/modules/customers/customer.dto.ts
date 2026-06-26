@@ -10,8 +10,8 @@ export const createCustomerSchema = z.object({
   guarantorPhone: z.string().regex(/^\+?\d{10,15}$/, 'Invalid guarantor phone number format').optional(),
   dueDate: z.string().datetime({ message: 'Must be a valid ISO datetime string' }),
   importedOverdueDays: z.number().int().min(0),
-  notes: z.string().max(1000).optional(),
-  tags: z.array(z.string()).default([]),
+  // notes: z.string().max(1000).optional(),
+  // tags: z.array(z.string()).default([]),
 });
 
 export type CreateCustomerDto = z.infer<typeof createCustomerSchema>;
@@ -23,8 +23,8 @@ export const updateCustomerSchema = z.object({
   guarantorPhone: z.string().regex(/^\+?\d{10,15}$/, 'Invalid guarantor phone number format').optional(),
   dueDate: z.string().datetime({ message: 'Must be a valid ISO datetime string' }).optional(),
   importedOverdueDays: z.number().int().min(0).optional(),
-  notes: z.string().max(1000).optional(),
-  tags: z.array(z.string()).optional(),
+  // notes: z.string().max(1000).optional(),
+  // tags: z.array(z.string()).optional(),
 });
 
 export type UpdateCustomerDto = z.infer<typeof updateCustomerSchema>;
@@ -36,7 +36,7 @@ export const customerQuerySchema = z.object({
   order: z.enum(['asc', 'desc']).optional().default('desc'),
   search: z.string().optional(),
   customerGroup: z.nativeEnum(CustomerGroup).optional(),
-  tag: z.string().optional(),
+  // tag: z.string().optional(),
 });
 
 export type CustomerQueryDto = z.infer<typeof customerQuerySchema>;
@@ -51,8 +51,8 @@ export interface CustomerResponseDto {
   importedOverdueDays: number;
   overdueDays: number;
   customerGroup: CustomerGroup;
-  notes?: string;
-  tags: string[];
+  // notes?: string;
+  // tags: string[];
   createdAt: Date;
   updatedAt: Date;
 }

@@ -44,8 +44,8 @@ export class CustomerController {
         rowData.importedOverdueDays = row.getCell(6).value ? Number(row.getCell(6).value) : 0;
         // Add other fields as needed, mapping Excel columns to DTO fields
         // For example, if notes is column 7, tags is column 8
-        rowData.notes = row.getCell(7).value?.toString() || '';
-        rowData.tags = row.getCell(8).value?.toString() || '';
+        // rowData.notes = row.getCell(7).value?.toString() || '';
+        // rowData.tags = row.getCell(8).value?.toString() || '';
 
         try {
           const validatedRow = importCustomerSchema.parse(rowData);

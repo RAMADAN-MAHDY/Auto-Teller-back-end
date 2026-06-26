@@ -61,15 +61,15 @@ const customerSchema = new Schema<ICustomer>(
       enum: Object.values(CustomerGroup),
       required: [true, 'Customer group is required'],
     },
-    notes: {
-      type: String,
-      trim: true,
-      maxlength: [1000, 'Notes must be at most 1000 characters'],
-    },
-    tags: {
-      type: [String],
-      default: [],
-    },
+    // notes: {
+    //   type: String,
+    //   trim: true,
+    //   maxlength: [1000, 'Notes must be at most 1000 characters'],
+    // },
+    // tags: {
+    //   type: [String],
+    //   default: [],
+    // },
   },
   {
     timestamps: true,
