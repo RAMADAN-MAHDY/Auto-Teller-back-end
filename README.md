@@ -53,27 +53,6 @@ export default api;
 }
 ```
 
-### 2.3 حالة القوائم والترقيم (Pagination Response)
-أي Endpoint يرجع قائمة بيانات (مثل جلب العملاء أو الحملات) سيرجع بيانات الترقيم (Pagination) بالشكل التالي:
-```json
-{
-  "success": true,
-  "message": "Customers retrieved successfully",
-  "data": {
-    "docs": [ { ... }, { ... } ], // مصفوفة البيانات الفعلية
-    "totalDocs": 100,
-    "limit": 20,
-    "totalPages": 5,
-    "page": 1,
-    "pagingCounter": 1,
-    "hasPrevPage": false,
-    "hasNextPage": true,
-    "prevPage": null,
-    "nextPage": 2
-  }
-}
-```
-
 ---
 
 ## 3. المصادقة (Authentication)
