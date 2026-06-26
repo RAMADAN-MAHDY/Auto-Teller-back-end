@@ -50,10 +50,12 @@ webSocketServer.initialize(httpServer);
 
 // 3. Global Security and Logging Middlewares
 // console.log('CORS_ORIGIN:', env.CORS_ORIGIN);
+const corsOrigin = env.CORS_ORIGIN.split(',');
+
 app.use(helmet());
 app.use(
   cors({
-    origin: env.CORS_ORIGIN,
+    origin: corsOrigin,
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

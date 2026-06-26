@@ -135,8 +135,33 @@ const response = await api.post('/auth/login', {
 }
   }
 }
+}
+*(يجب حفظ الـ `accessToken` و الـ `refreshToken` في الـ `localStorage` أو الـ `cookies`).*
+
+### 3.2 تجديد التوكن (Refresh Token)
+- **المسار:** `POST /auth/refresh`
+- **الغرض:** تجديد الـ `accessToken` باستخدام الـ `refreshToken` عندما ينتهي صلاحيته.
+
+**مثال Axios:**
+```javascript
+const response = await api.post('/auth/refresh', {
+  refreshToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTNlMTg5YjM0MTRhM2UwOGM1OWY3NjQiLCJlbWFpbCI6ImFkbWluXzJAYmFua3JlYWNoLmNvbSIsInJvbGUiOiJlbXBsb3llZSIsImlhdCI6MTc4MjQ5MjA3MywiZXhwIjoxNzgzMDk2ODczfQ.IS_zXOpWrEXqWGboBgR780NUj_prLYs5H6s-e2br8wk"
+});
 ```
-*(يجب حفظ الـ `accessToken` في الـ `localStorage` أو الـ `cookies`).*
+
+**الاستجابة (Response):**
+```json
+{
+  "success": true,
+  "message": "Token refreshed successfully",
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTNlMTg5YjM0MTRhM2UwOGM1OWY3NjQiLCJlbWFpbCI6ImFkbWluXzJAYmFua3JlYWNoLmNvbSIsInJvbGUiOiJlbXBsb3llZSIsImlhdCI6MTc4MjQ5MjExOCwiZXhwIjoxNzgyNDkzMDE4fQ.mcU1F5875-extFSpr7G7GMTcsfvNthBc4Y6GTMph_7g",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTNlMTg5YjM0MTRhM2UwOGM1OWY3NjQiLCJlbWFpbCI6ImFkbWluXzJAYmFua3JlYWNoLmNvbSIsInJvbGUiOiJlbXBsb3llZSIsImlhdCI6MTc4MjQ5MjExOCwiZXhwIjoxNzgzMDk2OTE4fQ.QOibpYJi2FNOi2rNp_v4cnQPY_Vlw82EUtmcPKCqnZA",
+    "tokenType": "Bearer"
+  }
+}
+```
+*(يجب حفظ التوكنز الجديدة واستبدال القديمة بها).*
 
 ---
 
