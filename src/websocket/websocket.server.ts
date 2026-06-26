@@ -134,7 +134,12 @@ export class WebSocketServer {
       campaignId,
       status: 'completed',
       message: `Campaign "${title}" has completed`,
-      progress: stats,
+      progress: {
+        total: stats.totalCustomers,
+        processed: stats.processedCustomers,
+        sent: stats.sentMessages,
+        failed: stats.failedMessages,
+      },
       timestamp: new Date(),
     };
 
