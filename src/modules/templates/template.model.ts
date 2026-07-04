@@ -4,6 +4,7 @@ export interface ITemplate extends Document {
   name: string;
   body: string;
   variables: string[];
+  isMeta?: boolean;
   createdBy: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -28,6 +29,10 @@ const templateSchema = new Schema<ITemplate>(
       type: [String],
       default: [],
     },
+    isMeta: {
+      type: Boolean,
+      default: false,
+    },
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: 'User',
@@ -47,6 +52,7 @@ const templateSchema = new Schema<ITemplate>(
 
 // Indexes
 templateSchema.index({ name: 1 });
+templateSchema.index({ isMeta: 1 });
 templateSchema.index({ createdBy: 1 });
 
 export const TemplateModel = mongoose.model<ITemplate>('Template', templateSchema);

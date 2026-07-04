@@ -59,6 +59,18 @@ router.get('/', validate(templateQuerySchema, 'query'), asyncHandler(controller.
 
 /**
  * @openapi
+ * /templates/meta:
+ *   get:
+ *     tags: [Templates]
+ *     summary: Fetch and sync Meta approved templates
+ *     responses:
+ *       200:
+ *         description: Meta templates list
+ */
+router.get('/meta', asyncHandler(controller.getMetaTemplates));
+
+/**
+ * @openapi
  * /templates/{id}:
  *   get:
  *     tags: [Templates]

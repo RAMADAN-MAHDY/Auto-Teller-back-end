@@ -29,6 +29,7 @@ export interface TemplateResponseDto {
   name: string;
   body: string;
   variables: string[];
+  isMeta?: boolean;
   createdBy: {
     id: string;
     fullName: string;

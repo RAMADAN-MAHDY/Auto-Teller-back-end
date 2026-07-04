@@ -37,4 +37,10 @@ export class TemplateController {
     await this.templateService.delete(req.params.id as string);
     sendNoContent(res);
   };
+
+  getMetaTemplates = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const userId = req.user!.userId;
+    const result = await this.templateService.syncMetaTemplates(userId);
+    sendSuccess(res, result, 'Meta templates retrieved and synced successfully');
+  };
 }

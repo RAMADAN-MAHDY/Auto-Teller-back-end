@@ -29,6 +29,7 @@ const envSchema = z.object({
   WHATSAPP_API_URL: z.string().url().default('https://graph.facebook.com/v23.0'),
   WHATSAPP_ACCESS_TOKEN: z.string().min(1, 'WHATSAPP_ACCESS_TOKEN is required'),
   WHATSAPP_PHONE_NUMBER_ID: z.string().min(1, 'WHATSAPP_PHONE_NUMBER_ID is required'),
+  WHATSAPP_BUSINESS_ACCOUNT_ID: z.string().min(1, 'WHATSAPP_BUSINESS_ACCOUNT_ID is required'),
   WHATSAPP_WEBHOOK_VERIFY_TOKEN: z.string().default('bankreach_webhook_token'),
 
   // CORS

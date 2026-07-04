@@ -5,6 +5,8 @@ import { MessageRepository } from '../messages/message.repository';
 import { CampaignRepository } from '../campaigns/campaign.repository';
 import { MessageStatus } from '../../common/constants';
 import { logger } from '../../logger';
+import { TemplateService } from '../templates/template.service';
+import { TemplateRepository } from '../templates/template.repository';
 
 @Service()
 export class WebhookController {
@@ -59,6 +61,24 @@ export class WebhookController {
 
                 if (targetStatus && whatsappMessageId) {
                   await this.updateMessageAndCampaignStats(whatsappMessageId, targetStatus, statusObj.errors?.[0]?.message);
+                }
+              }
+            } else if (change.field === 'message_templates') {
+              const value = change.value;
+              const eventType = value?.event;
+              const templateId = value?.message_template_id;
+              const templateName = value?.message_template_name;
+
+              logger.info(`Received template webhook event: ${eventType} for template ${templateName} (${templateId})`);
+
+              if (templateId) {
+                const templateService = Container.get(TemplateService);
+                if (eventType === 'APPROVED') {
+                  await templateService.syncSingleMetaTemplate(String(templateId));
+                } else if (eventType === 'REJECTED' || eventType === 'DELETED') {
+                  const templateRepository = Container.get(TemplateRepository);
+                  await templateRepository.findOneAndDelete({ name: templateName, isMeta: true });
+                  logger.info(`Deleted rejected/deleted template ${templateName} from local DB.`);
                 }
               }
             }

@@ -21,4 +21,11 @@ export class TemplateRepository extends BaseRepository<ITemplate> {
   async findByCreator(userId: string): Promise<ITemplate[]> {
     return this.model.find({ createdBy: userId }).exec();
   }
+
+  /**
+   * Find one template and delete it.
+   */
+  async findOneAndDelete(filter: any): Promise<ITemplate | null> {
+    return this.model.findOneAndDelete(filter).exec();
+  }
 }

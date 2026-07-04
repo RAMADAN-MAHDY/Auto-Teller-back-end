@@ -184,6 +184,13 @@ export class QueueService {
       const customer = customers.data.find((c) => c._id.toString() === msg.customerId.toString());
       if (customer) {
         // Construct variables mapping
+        const arabicMonths = [
+          'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+          'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+        ];
+        const monthIndex = new Date(customer.dueDate).getMonth();
+        const monthName = arabicMonths[monthIndex];
+
         const variables: Record<string, string | number | Date> = {
           fullName: customer.fullName,
           phoneNumber: customer.phoneNumber,
@@ -192,12 +199,18 @@ export class QueueService {
           dueDate: customer.dueDate,
           overdueDays: customer.overdueDays,
           customerGroup: customer.customerGroup,
+          // Support template variable aliases/variations
+          customer: customer.fullName,
+          month: monthName,
+          day: customer.overdueDays,
         };
 
         // Add a job to process sending this message
         await this.campaignQueue.add(JOB_TYPES.SEND_MESSAGE, {
           messageId: msg._id.toString(),
+          templateName: template.name,
           templateBody: template.body,
+          templateVariables: template.variables || [],
           variables,
         });
       }
@@ -210,9 +223,15 @@ export class QueueService {
    * Handler to send individual WhatsApp messages and record stats.
    */
   private async handleSendMessage(
-    job: Job<{ messageId: string; templateBody: string; variables: Record<string, string | number | Date> }>,
+    job: Job<{
+      messageId: string;
+      templateName: string;
+      templateBody: string;
+      templateVariables: string[];
+      variables: Record<string, string | number | Date>;
+    }>,
   ) {
-    const { messageId, templateBody, variables } = job.data;
+    const { messageId, templateName, templateVariables, variables } = job.data;
     const message = await this.messageRepository.findById(messageId);
     if (!message) {
       logger.error(`Message not found: ${messageId}`);
@@ -221,11 +240,21 @@ export class QueueService {
 
     const campaignId = message.campaignId.toString();
 
-    // Render body using template variables
-    const renderedBody = renderTemplate(templateBody, variables);
+    // Map template variables to an array of values in order of appearance
+    const mappedVariables: string[] = (templateVariables || []).map((varName) => {
+      const val = variables[varName];
+      if (val instanceof Date) {
+        return val.toISOString().split('T')[0]; // Format Date as YYYY-MM-DD
+      }
+      return val !== undefined ? String(val) : '';
+    });
 
-    // Send using WhatsApp provider
-    const result = await this.whatsAppProvider.sendTextMessage(message.phoneNumber, renderedBody);
+    // Send using WhatsApp provider template message method
+    const result = await this.whatsAppProvider.sendTemplateMessage(
+      message.phoneNumber,
+      templateName,
+      mappedVariables,
+    );
 
     if (result.status === 'success') {
       await this.messageRepository.updateById(messageId, {
