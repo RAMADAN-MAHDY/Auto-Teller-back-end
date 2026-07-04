@@ -10,43 +10,13 @@ import { logger } from '../../logger';
 import { WhatsAppProvider } from '../../providers/whatsapp.provider';
 
 function mapMetaVariables(bodyText: string): string[] {
-  const regex = /\{\{(\d+)\}\}/g;
-  const matches: number[] = [];
+  const regex = /\{\{(\w+)\}\}/g;
+  const vars = new Set<string>();
   let match;
   while ((match = regex.exec(bodyText)) !== null) {
-    const num = parseInt(match[1], 10);
-    if (!matches.includes(num)) {
-      matches.push(num);
-    }
+    vars.add(match[1]);
   }
-
-  matches.sort((a, b) => a - b);
-
-  return matches.map((index) => {
-    const placeholderStr = `{{${index}}}`;
-    const pos = bodyText.indexOf(placeholderStr);
-    if (pos === -1) return 'customer';
-
-    const before = bodyText.substring(Math.max(0, pos - 20), pos);
-    const after = bodyText.substring(pos + placeholderStr.length, pos + placeholderStr.length + 20);
-
-    const context = (before + ' ' + after).toLowerCase();
-
-    if (context.includes('عميل') || context.includes('السيد') || context.includes('الاسم') || context.includes('أهلاً') || context.includes('مرحباً') || context.includes('اسم')) {
-      return 'customer';
-    }
-    if (context.includes('شهر') || context.includes('تاريخ') || context.includes('استحقاق') || context.includes('موعد')) {
-      return 'month';
-    }
-    if (context.includes('تأخر') || context.includes('يوم') || context.includes('أيام') || context.includes('تاخر')) {
-      return 'day';
-    }
-
-    if (index === 1) return 'customer';
-    if (index === 2) return 'month';
-    if (index === 3) return 'day';
-    return `var_${index}`;
-  });
+  return Array.from(vars);
 }
 
 @Service()

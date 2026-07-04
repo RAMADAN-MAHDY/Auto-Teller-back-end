@@ -352,6 +352,39 @@ const response = await api.post('/templates', {
 ---
 ### جلب القوالب
 
+### 5.2 جلب ومزامنة قوالب Meta (Meta Approved Templates)
+- **المسار:** `GET /templates/meta`
+- **الغرض:** يقوم بجلب جميع قوالب الرسائل المعتمدة (APPROVED) من حساب Meta ومزامنتها تلقائياً مع قاعدة البيانات المحلية وإعادتها للفرونت إند لاستخدامها في الحملات (Campaigns).
+
+**مثال Axios:**
+```javascript
+const response = await api.get('/templates/meta');
+```
+
+**الاستجابة (Response):**
+```json
+{
+  "success": true,
+  "message": "Meta templates retrieved and synced successfully",
+  "data": [
+    {
+      "id": "6a3e20423414a3e08c59f789",
+      "name": "payment_reminder",
+      "body": "عزيزي العميل {{customer}}، نود تذكيرك بأن القسط المستحق لشهر {{month}} قد تأخر {{day}} يوم.",
+      "variables": [
+        "customer",
+        "month",
+        "day"
+      ],
+      "isMeta": true,
+      "createdBy": "6a3e189b3414a3e08c59f764",
+      "createdAt": "2026-06-26T06:46:26.864Z",
+      "updatedAt": "2026-06-26T06:46:26.864Z"
+    }
+  ]
+}
+```
+
 ### عرض القوالب مع بحث + Pagination
 GET {{baseUrl}}/templates?page=1&limit=20&search=Welcome
 Authorization: Bearer {{accessToken}}
