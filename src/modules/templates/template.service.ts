@@ -130,21 +130,21 @@ export class TemplateService {
     const fallbackUserId = userId || '60c72b2f9b1d8e001c888888';
 
     for (const mt of approvedTemplates) {
-      const bodyComponent = mt.components?.find((c: any) => c.type === 'BODY');
-      const body = bodyComponent?.text || '';
-      if (!body) continue;
+      const textComponents = mt.components?.filter((c: any) => ['BODY','HEADER','TITLE'].includes(c.type));
+      const fullText = textComponents?.map((c: any) => c.text || '').join(' ');
+      if (!fullText) continue;
 
-      const variables = mapMetaVariables(body);
+      const variables = mapMetaVariables(fullText);
 
       let template = await this.templateRepository.findOne({ name: mt.name, isMeta: true });
       if (template) {
-        template.body = body;
+        template.body = fullText;
         template.variables = variables;
         await template.save();
       } else {
         template = await this.templateRepository.create({
           name: mt.name,
-          body,
+          body: fullText,
           variables,
           isMeta: true,
           createdBy: fallbackUserId,
@@ -166,22 +166,22 @@ export class TemplateService {
         return null;
       }
 
-      const bodyComponent = mt.components?.find((c: any) => c.type === 'BODY');
-      const body = bodyComponent?.text || '';
-      if (!body) return null;
+      const textComponents = mt.components?.filter((c: any) => ['BODY','HEADER','TITLE'].includes(c.type));
+      const fullText = textComponents?.map((c: any) => c.text || '').join(' ');
+      if (!fullText) return null;
 
-      const variables = mapMetaVariables(body);
+      const variables = mapMetaVariables(fullText);
       const fallbackUserId = '60c72b2f9b1d8e001c888888';
 
       let template = await this.templateRepository.findOne({ name: mt.name, isMeta: true });
       if (template) {
-        template.body = body;
+        template.body = fullText;
         template.variables = variables;
         await template.save();
       } else {
         template = await this.templateRepository.create({
           name: mt.name,
-          body,
+          body: fullText,
           variables,
           isMeta: true,
           createdBy: fallbackUserId,
