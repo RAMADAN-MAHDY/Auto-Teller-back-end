@@ -68,6 +68,7 @@ router.get('/', validate(templateQuerySchema, 'query'), asyncHandler(controller.
  *         description: Meta templates list
  */
 router.get('/meta', asyncHandler(controller.getMetaTemplates));
+router.post('/meta/sync', asyncHandler(controller.syncMeta));
 
 /**
  * @openapi

@@ -43,4 +43,11 @@ export class TemplateController {
     const result = await this.templateService.syncMetaTemplates(userId);
     sendSuccess(res, result, 'Meta templates retrieved and synced successfully');
   };
+
+  // POST /templates/meta/sync – fetch from Meta and sync to DB
+  syncMeta = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const userId = req.user!.userId;
+    const result = await this.templateService.syncMetaTemplates(userId);
+    sendSuccess(res, result, 'Meta templates synced successfully');
+  };
 }
