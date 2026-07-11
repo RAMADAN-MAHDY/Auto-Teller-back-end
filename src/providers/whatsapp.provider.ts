@@ -132,28 +132,6 @@ export class WhatsAppProvider {
     }
   }
 
-  /**
-   * Specific helper to send installment reminder using template 'bankreach'
-   */
-  async sendInstallmentReminder(
-    to: string,
-    data: {
-      customer: string;
-      month: string;
-      day: number;
-    }
-  ) {
-    return this.sendTemplateMessage(
-      to,
-      'bankreach',
-      [
-        data.customer,
-        data.month,
-        data.day.toString(),
-      ]
-    );
-  }
-
   private cleanPhoneNumber(phone: string): string {
     // Strip non-digits except maybe the leading plus (Meta API prefers digits only)
     return phone.replace(/\D/g, '');
