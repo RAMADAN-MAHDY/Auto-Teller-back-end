@@ -30,6 +30,9 @@ export class WhatsAppProvider {
     try {
       const cleanedPhone = this.cleanPhoneNumber(to);
       const url = `${this.apiUrl}/${this.phoneNumberId}/messages`;
+
+      console.log("sendTextMessage fun");
+      console.log(body + "-------------------------------------------------");
       
       const payload = {
         messaging_product: 'whatsapp',
@@ -40,6 +43,11 @@ export class WhatsAppProvider {
           body: body,
         },
       };
+
+      logger.info('WhatsApp Template Payload', {
+  url,
+  payload,
+});
 
       const response = await axios.post(url, payload, {
         headers: {
@@ -76,12 +84,20 @@ export class WhatsAppProvider {
     to: string,
     templateName: string,
     variables: string[],
-    languageCode = 'ar'
+    languageCode = 'ar_EG'
   ): Promise<ISendMessageResponse> {
     try {
       const cleanedPhone = this.cleanPhoneNumber(to);
       const url = `${this.apiUrl}/${this.phoneNumberId}/messages`;
 
+      console.log("sendTemplateMessage fun");
+      console.log(templateName + "-------------------------------------------------");
+      console.log(variables.map(value => ({
+        type: 'text',
+        text: value,
+      })) + "-------------------------------------------------");
+      console.log(languageCode + "-------------------------------------------------");
+      
       const payload = {
         messaging_product: 'whatsapp',
         recipient_type: 'individual',
