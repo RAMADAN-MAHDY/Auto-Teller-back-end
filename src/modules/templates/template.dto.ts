@@ -28,6 +28,10 @@ export interface TemplateResponseDto {
   id: string;
   name: string;
   body: string;
+  category: string;
+  languageCode: string;
+  metaTemplateId?: string;
+  status?: string;
   variables: string[];
   isMeta?: boolean;
   createdBy: {

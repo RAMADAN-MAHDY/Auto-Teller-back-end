@@ -2,6 +2,10 @@ import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export interface ITemplate extends Document {
   name: string;
+  category: string;
+  languageCode: string;
+  metaTemplateId?: string;
+  status?: string;
   body: string;
   variables: string[];
   isMeta?: boolean;
@@ -37,6 +41,22 @@ const templateSchema = new Schema<ITemplate>(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
+    },
+    category: {
+      type: String,
+      default: 'default',
+    },
+    languageCode: {
+      type: String,
+      default: 'ar_EG',
+    },
+    metaTemplateId: {
+      type: String,
+      default: '',
+    },
+    status: {
+      type: String,
+      default: '',
     },
   },
   {

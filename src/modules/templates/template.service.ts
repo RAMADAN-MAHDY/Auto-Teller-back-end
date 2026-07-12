@@ -110,6 +110,10 @@ export class TemplateService {
     return {
       id: template.id,
       name: template.name,
+      category: template.category,
+      languageCode: template.languageCode,
+      metaTemplateId: template.metaTemplateId,
+      status: template.status,
       body: template.body,
       variables: template.variables,
       isMeta: template.isMeta,
@@ -138,12 +142,20 @@ export class TemplateService {
 
       let template = await this.templateRepository.findOne({ name: mt.name, isMeta: true });
       if (template) {
+        template.category = mt.category || 'default';
+        template.languageCode = mt.language_code || 'ar_EG';
+        template.metaTemplateId = mt.id;
+        template.status = mt.status;
         template.body = fullText;
         template.variables = variables;
         await template.save();
       } else {
         template = await this.templateRepository.create({
           name: mt.name,
+          category: mt.category || 'default',
+          languageCode: mt.language_code || 'ar_EG',
+          metaTemplateId: mt.id,
+          status: mt.status,
           body: fullText,
           variables,
           isMeta: true,
@@ -175,12 +187,20 @@ export class TemplateService {
 
       let template = await this.templateRepository.findOne({ name: mt.name, isMeta: true });
       if (template) {
+        template.category = mt.category || 'default';
+        template.languageCode = mt.language_code || 'ar_EG';
+        template.metaTemplateId = mt.id;
+        template.status = mt.status;
         template.body = fullText;
         template.variables = variables;
         await template.save();
       } else {
         template = await this.templateRepository.create({
           name: mt.name,
+          category: mt.category || 'default',
+          languageCode: mt.language_code || 'ar_EG',
+          metaTemplateId: mt.id,
+          status: mt.status,
           body: fullText,
           variables,
           isMeta: true,
