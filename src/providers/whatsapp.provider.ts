@@ -167,6 +167,9 @@ export class WhatsAppProvider {
           limit: 100, // retrieve up to 100 templates
         },
       });
+
+      console.log("getMetaTemplates fun ---------------------------------------------");
+      console.log(response.data?.data || []);
       return response.data?.data || [];
     } catch (error: any) {
       const errorMessage = error.response?.data?.error?.message || error.message;
