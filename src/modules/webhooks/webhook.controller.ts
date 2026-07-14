@@ -17,9 +17,9 @@ export class WebhookController {
    * GET verification endpoint for Meta Cloud API webhook setup.
    */
   verify = async (req: Request, res: Response): Promise<void> => {
-    const mode = req.query.hub_mode;
-    const token = req.query.hub_verify_token;
-    const challenge = req.query.hub_challenge;
+    const mode = req.query['hub.mode'] || req.query.hub_mode;
+    const token = req.query['hub.verify_token'] || req.query.hub_verify_token;
+    const challenge = req.query['hub.challenge'] || req.query.hub_challenge;
 
     if (mode === 'subscribe' && token === env.WHATSAPP_WEBHOOK_VERIFY_TOKEN) {
       logger.info('✅ Webhook verified successfully by Meta');
