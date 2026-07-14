@@ -7,7 +7,7 @@ import { MessageStatus } from '../../common/constants';
 import { logger } from '../../logger';
 import { TemplateService } from '../templates/template.service';
 import { TemplateRepository } from '../templates/template.repository';
-
+import { env } from '../../configs/env.config';
 @Service()
 export class WebhookController {
   private readonly messageRepository = Container.get(MessageRepository);
