@@ -12,6 +12,8 @@ export interface CampaignUpdateEvent {
     processed: number;
     failed: number;
     sent: number;
+    delivered?: number;
+    read?: number;
   };
   message?: string;
   timestamp: Date;
@@ -24,6 +26,8 @@ export interface CampaignStats {
   totalCustomers: number;
   processedCustomers: number;
   sentMessages: number;
+  deliveredMessages?: number;
+  readMessages?: number;
   failedMessages: number;
   startTime?: Date;
   endTime?: Date;
@@ -195,6 +199,16 @@ export class WebSocketServer {
 
   getConnectedClientsCount(): number {
     return this.connectedClients.size;
+  }
+
+  broadcastMessageUpdate(campaignId: string, message: { id: string; status: string; deliveredAt?: Date; readAt?: Date; error?: string }): void {
+    if (!this.io) {
+      logger.warn('WebSocket server not initialized');
+      return;
+    }
+
+    this.io.to(`campaign:${campaignId}`).emit('message-update', message);
+    logger.info(`Message update broadcasted for campaign: ${campaignId}, message: ${message.id}, status: ${message.status}`);
   }
 
   isInitialized(): boolean {

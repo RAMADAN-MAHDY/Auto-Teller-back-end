@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import Container, { Service } from 'typedi';
-import { env } from '../../configs/env.config';
+import { CampaignWebSocketService } from '../../websocket/campaign-websocket.service';
 import { MessageRepository } from '../messages/message.repository';
 import { CampaignRepository } from '../campaigns/campaign.repository';
 import { MessageStatus } from '../../common/constants';
@@ -12,6 +12,7 @@ import { TemplateRepository } from '../templates/template.repository';
 export class WebhookController {
   private readonly messageRepository = Container.get(MessageRepository);
   private readonly campaignRepository = Container.get(CampaignRepository);
+  private readonly campaignWebSocketService = Container.get(CampaignWebSocketService);
 
   /**
    * GET verification endpoint for Meta Cloud API webhook setup.
@@ -149,6 +150,23 @@ export class WebhookController {
         },
       });
       logger.info(`Recalculated campaign ${campaignId} stats: ${JSON.stringify(stats)}`);
+      // Emit WebSocket updates for the specific message and campaign stats
+      this.campaignWebSocketService.sendMessageUpdate(campaignId, {
+        id: message.id,
+        status,
+        deliveredAt: additionalData.deliveredAt,
+        readAt: additionalData.readAt,
+        error: additionalData.error,
+      });
+      this.campaignWebSocketService.sendCampaignStats({
+        campaignId,
+        title: campaign.title,
+        status: campaign.status,
+        totalCustomers: campaign.stats?.total || 0,
+        processedCustomers: (stats[MessageStatus.SENT] || 0) + (stats[MessageStatus.DELIVERED] || 0) + (stats[MessageStatus.READ] || 0) + (stats[MessageStatus.FAILED] || 0),
+        sentMessages: stats[MessageStatus.SENT] || 0,
+        failedMessages: stats[MessageStatus.FAILED] || 0,
+      });
     }
   }
 }

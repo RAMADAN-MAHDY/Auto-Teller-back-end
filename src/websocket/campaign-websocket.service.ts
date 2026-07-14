@@ -97,6 +97,14 @@ export class CampaignWebSocketService {
   }
 
   /**
+   * إرسال تحديث لحالة رسالة معينة داخل حملة
+   */
+  sendMessageUpdate(campaignId: string, message: { id: string; status: string; deliveredAt?: Date; readAt?: Date; error?: string }): void {
+    this.webSocketServer.broadcastMessageUpdate(campaignId, message);
+    logger.info(`Message update sent via WebSocket for campaign ${campaignId}, message ${message.id}`);
+  }
+
+  /**
    * الحصول على عدد العملاء المتصلين
    */
   getConnectedClientsCount(): number {
