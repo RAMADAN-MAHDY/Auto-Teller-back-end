@@ -36,7 +36,7 @@ export class WebhookController {
   handleCallback = async (req: Request, res: Response): Promise<void> => {
     try {
       const body = req.body;
-      logger.debug('Webhook callback received payload:', JSON.stringify(body, null, 2));
+      logger.info(`Incoming Webhook callback payload: ${JSON.stringify(body)}`);
 
       // Validate WhatsApp event structure
       if (body.object === 'whatsapp_business_account') {
@@ -51,6 +51,7 @@ export class WebhookController {
               for (const statusObj of statuses) {
                 const whatsappMessageId = statusObj.id;
                 const statusStr = statusObj.status; // 'sent', 'delivered', 'read', 'failed'
+                logger.info(`Processing status update event for WhatsApp Message ID: ${whatsappMessageId}, Status: ${statusStr}`);
                 
                 // Map WhatsApp status to MessageStatus enum
                 let targetStatus: MessageStatus | undefined;
@@ -61,6 +62,8 @@ export class WebhookController {
 
                 if (targetStatus && whatsappMessageId) {
                   await this.updateMessageAndCampaignStats(whatsappMessageId, targetStatus, statusObj.errors?.[0]?.message);
+                } else {
+                  logger.info(`Ignored status update: targetStatus or whatsappMessageId is empty/invalid. targetStatus: ${targetStatus}, ID: ${whatsappMessageId}`);
                 }
               }
             } else if (change.field === 'message_templates') {
@@ -84,6 +87,8 @@ export class WebhookController {
             }
           }
         }
+      } else {
+        logger.info(`Webhook callback payload object is not 'whatsapp_business_account': ${body.object}`);
       }
 
       // Always return 200 OK to Meta to acknowledge receipt
@@ -101,12 +106,13 @@ export class WebhookController {
   ): Promise<void> {
     const message = await this.messageRepository.findByWhatsAppId(whatsappMessageId);
     if (!message) {
-      logger.debug(`Webhook status update ignored: WhatsApp message ID ${whatsappMessageId} not in local database.`);
+      logger.info(`Webhook status update ignored: WhatsApp message ID ${whatsappMessageId} not in local database.`);
       return;
     }
 
     // Only update if the status is a progression or different
     if (message.status === status) {
+      logger.info(`Message status is already ${status} for ID ${message.id}. No update needed.`);
       return;
     }
 
@@ -142,7 +148,7 @@ export class WebhookController {
           ...stats,
         },
       });
-      logger.debug(`Recalculated campaign ${campaignId} stats:`, stats);
+      logger.info(`Recalculated campaign ${campaignId} stats: ${JSON.stringify(stats)}`);
     }
   }
 }
