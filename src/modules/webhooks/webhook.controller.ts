@@ -165,6 +165,8 @@ export class WebhookController {
         totalCustomers: campaign.stats?.total || 0,
         processedCustomers: (stats[MessageStatus.SENT] || 0) + (stats[MessageStatus.DELIVERED] || 0) + (stats[MessageStatus.READ] || 0) + (stats[MessageStatus.FAILED] || 0),
         sentMessages: stats[MessageStatus.SENT] || 0,
+        deliveredMessages: stats[MessageStatus.DELIVERED] || 0,
+        readMessages: stats[MessageStatus.READ] || 0,
         failedMessages: stats[MessageStatus.FAILED] || 0,
       });
     }
