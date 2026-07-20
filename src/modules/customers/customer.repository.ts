@@ -45,4 +45,12 @@ export class CustomerRepository extends BaseRepository<ICustomer> {
   async findAllCustomers(): Promise<ICustomer[]> {
     return this.model.find({}).exec();
   }
+
+  /**
+   * Delete all customers from the database.
+   */
+  async deleteAllCustomers(): Promise<{ deletedCount: number }> {
+    const result = await this.model.deleteMany({}).exec();
+    return { deletedCount: result.deletedCount || 0 };
+  }
 }
