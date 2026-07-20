@@ -83,4 +83,9 @@ export class CustomerController {
     await this.customerService.delete(req.params.id as string);
     sendNoContent(res);
   };
+
+  deleteAll = async (req: Request, res: Response): Promise<void> => {
+    const result = await this.customerService.deleteAll();
+    sendSuccess(res, result, 'All customers deleted successfully');
+  };
 }
