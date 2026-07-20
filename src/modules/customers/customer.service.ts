@@ -152,6 +152,12 @@ export class CustomerService {
     logger.info(`Customer deleted: ${customer.fullName}`);
   }
 
+  async deleteAll(): Promise<{ deletedCount: number }> {
+    const result = await this.customerRepository.deleteAllCustomers();
+    logger.info(`All customers deleted. Total deleted: ${result.deletedCount}`);
+    return result;
+  }
+
   private toResponseDto(customer: ICustomer): CustomerResponseDto {
     return {
       id: customer.id,
