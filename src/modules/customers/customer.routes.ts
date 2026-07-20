@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import Container from 'typedi';
 import { CustomerController } from './customer.controller';
-import { authenticate, validate } from '../../middlewares';
+import { authenticate, validate, authorize } from '../../middlewares';
 import { createCustomerSchema, updateCustomerSchema, customerQuerySchema } from './customer.dto';
 import { asyncHandler } from '../../common/utils';
+import { UserRole } from '../../common/constants';
 import multer from 'multer';
 
 const router = Router();
@@ -152,6 +153,26 @@ router.get('/:id', asyncHandler(controller.findById));
  *         description: Customer updated
  */
 router.patch('/:id', validate(updateCustomerSchema), asyncHandler(controller.update));
+
+/**
+ * @openapi
+ * /customers:
+ *   delete:
+ *     tags: [Customers]
+ *     summary: Delete all customers (Admin only)
+ *     responses:
+ *       200:
+ *         description: All customers deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 deletedCount: { type: number }
+ *       403:
+ *         description: Forbidden - Admin only
+ */
+router.delete('/', authorize(UserRole.ADMIN), asyncHandler(controller.deleteAll));
 
 /**
  * @openapi
