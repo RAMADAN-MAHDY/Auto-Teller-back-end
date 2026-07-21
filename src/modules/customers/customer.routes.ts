@@ -172,7 +172,7 @@ router.patch('/:id', validate(updateCustomerSchema), asyncHandler(controller.upd
  *       403:
  *         description: Forbidden - Admin only
  */
-router.delete('/', authorize(UserRole.ADMIN), asyncHandler(controller.deleteAll));
+router.delete('/', asyncHandler(controller.deleteAll));
 
 /**
  * @openapi
