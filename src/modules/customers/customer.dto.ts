@@ -9,7 +9,8 @@ export const createCustomerSchema = z.object({
   guarantorName: z.string().max(150).optional(),
   guarantorPhone: z.string().regex(/^\+?\d{10,15}$/, 'Invalid guarantor phone number format').optional(),
   dueDate: z.string().datetime({ message: 'Must be a valid ISO datetime string' }),
-  importedOverdueDays: z.number().int().min(0),
+  // Kept for backward compatibility; the backend currently calculates overdueDays from dueDate.
+  importedOverdueDays: z.number().int().min(0).optional(),
   // notes: z.string().max(1000).optional(),
   // tags: z.array(z.string()).default([]),
 });
@@ -22,6 +23,7 @@ export const updateCustomerSchema = z.object({
   guarantorName: z.string().max(150).optional(),
   guarantorPhone: z.string().regex(/^\+?\d{10,15}$/, 'Invalid guarantor phone number format').optional(),
   dueDate: z.string().datetime({ message: 'Must be a valid ISO datetime string' }).optional(),
+  // Kept for backward compatibility; the backend currently calculates overdueDays from dueDate.
   importedOverdueDays: z.number().int().min(0).optional(),
   // notes: z.string().max(1000).optional(),
   // tags: z.array(z.string()).optional(),

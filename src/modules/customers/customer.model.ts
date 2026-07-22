@@ -7,7 +7,7 @@ export interface ICustomer extends Document {
   guarantorName?: string;
   guarantorPhone?: string;
   dueDate: Date;
-  importedOverdueDays: number;
+  importedOverdueDays?: number;
   overdueDays: number;
   customerGroup: CustomerGroup;
   notes?: string;
@@ -48,8 +48,9 @@ const customerSchema = new Schema<ICustomer>(
     },
     importedOverdueDays: {
       type: Number,
-      required: [true, 'Imported overdue days is required'],
+      // Kept for backward compatibility; the backend currently calculates overdueDays from dueDate.
       min: 0,
+      default: 0,
     },
     overdueDays: {
       type: Number,

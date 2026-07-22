@@ -14,6 +14,7 @@ import { CustomerGroup } from '../../common/constants';
 export class CustomerService {
   private readonly customerRepository = Container.get(CustomerRepository);
 
+  // Create a new customer
   async create(dto: CreateCustomerDto): Promise<CustomerResponseDto> {
     const existing = await this.customerRepository.findByPhoneNumber(dto.phoneNumber);
     if (existing) {
@@ -26,6 +27,7 @@ export class CustomerService {
     const customer = await this.customerRepository.create({
       ...dto,
       dueDate,
+      importedOverdueDays: dto.importedOverdueDays ?? 0,
       overdueDays,
       customerGroup,
     } as any);
@@ -33,6 +35,7 @@ export class CustomerService {
     return this.toResponseDto(customer);
   }
 
+  // Bulk import customers from an array of customer data
   async importCustomers(customersData: ImportCustomerDto[]): Promise<{ imported: number; updated: number; failed: number; errors: string[] }> {
     let importedCount = 0;
     let updatedCount = 0;
@@ -57,7 +60,7 @@ export class CustomerService {
           guarantorName: data.guarantorName || undefined,
           guarantorPhone: data.guarantorPhone || undefined,
           dueDate: dueDate,
-          importedOverdueDays: data.importedOverdueDays,
+          importedOverdueDays: data.importedOverdueDays ?? 0,
           overdueDays: overdueDays,
           customerGroup: customerGroup,
           // notes: data.notes || undefined,
@@ -166,7 +169,7 @@ export class CustomerService {
       guarantorName: customer.guarantorName,
       guarantorPhone: customer.guarantorPhone,
       dueDate: customer.dueDate,
-      importedOverdueDays: customer.importedOverdueDays,
+      importedOverdueDays: customer.importedOverdueDays ?? 0,
       overdueDays: customer.overdueDays,
       customerGroup: customer.customerGroup,
       // notes: customer.notes,
