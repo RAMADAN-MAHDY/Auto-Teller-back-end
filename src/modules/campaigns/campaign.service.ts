@@ -9,10 +9,12 @@ import { CampaignStatus, CustomerGroup } from '../../common/constants';
 import { QueueService } from '../../queues/queue.service';
 import { CampaignWebSocketService } from '../../websocket/campaign-websocket.service';
 import { logger } from '../../logger';
+import { MessageRepository } from '../messages/message.repository';
 
 @Service()
 export class CampaignService {
   private readonly campaignRepository = Container.get(CampaignRepository);
+  private readonly messageRepository = Container.get(MessageRepository);
   private readonly queueService = Container.get(QueueService);
   private readonly campaignWebSocketService = Container.get(CampaignWebSocketService);
 
@@ -136,10 +138,12 @@ export class CampaignService {
       throw new NotFoundException('Campaign not found');
     }
 
-    if (campaign.status !== CampaignStatus.DRAFT) {
-      throw new BadRequestException('Only DRAFT campaigns can be deleted');
-    }
+    // TODO: إذا أردنا تقييد الحذف لاحقًا، يمكن إعادة هذا الشرط مرة أخرى:
+    // if (campaign.status !== CampaignStatus.DRAFT) {
+    //   throw new BadRequestException('Only DRAFT campaigns can be deleted');
+    // }
 
+    await this.messageRepository.deleteByCampaignId(id);
     await this.campaignRepository.deleteById(id);
     logger.info(`Campaign deleted: ${campaign.title}`);
   }

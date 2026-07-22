@@ -3,7 +3,7 @@ import { BaseRepository } from '../../database/base.repository';
 import { MessageModel, IMessage } from './message.model';
 import { MessageStatus } from '../../common/constants';
 import { IPaginatedResult, IPaginationQuery } from '../../common/interfaces';
-import { FilterQuery } from 'mongoose';
+import { FilterQuery, Types } from 'mongoose';
 
 @Service()
 export class MessageRepository extends BaseRepository<IMessage> {
@@ -76,6 +76,13 @@ export class MessageRepository extends BaseRepository<IMessage> {
    */
   async bulkCreate(messages: Partial<IMessage>[]): Promise<IMessage[]> {
     return this.model.insertMany(messages) as unknown as IMessage[];
+  }
+
+  /**
+   * Delete all messages belonging to a campaign.
+   */
+  async deleteByCampaignId(campaignId: string): Promise<void> {
+    await this.model.deleteMany({ campaignId: new Types.ObjectId(campaignId) }).exec();
   }
 
   /**
