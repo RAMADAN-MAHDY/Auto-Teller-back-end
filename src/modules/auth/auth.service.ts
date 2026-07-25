@@ -5,7 +5,13 @@ import { comparePassword, hashPassword } from '../../common/utils/password';
 import { generateTokenPair, verifyRefreshToken } from '../../common/utils/token';
 import { JwtPayload } from '../../common/interfaces';
 import { AUTH_CONSTANTS } from '../../common/constants';
-import { LoginDto, LoginResponseDto, RefreshResponseDto, RegisterDto } from './auth.dto';
+import {
+  ChangePasswordDto,
+  LoginDto,
+  LoginResponseDto,
+  RefreshResponseDto,
+  RegisterDto,
+} from './auth.dto';
 import { logger } from '../../logger';
 
 @Service()
@@ -127,5 +133,30 @@ export class AuthService {
       if (error instanceof UnauthorizedException) throw error;
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto): Promise<{ message: string }> {
+    const user = await this.userRepository.findByIdWithPassword(userId);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account is deactivated');
+    }
+
+    const isCurrentPasswordValid = await comparePassword(dto.currentPassword, user.password);
+
+    if (!isCurrentPasswordValid) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    const hashedPassword = await hashPassword(dto.newPassword);
+    await this.userRepository.updateById(user.id, { password: hashedPassword } as any);
+
+    logger.info(`Password changed successfully for user: ${user.email}`);
+
+    return { message: 'Password changed successfully' };
   }
 }

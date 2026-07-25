@@ -1,8 +1,13 @@
 import { Router } from 'express';
 import Container from 'typedi';
 import { AuthController } from './auth.controller';
-import { validate } from '../../middlewares';
-import { loginSchema, refreshTokenSchema, registerSchema } from './auth.dto';
+import { authenticate, validate } from '../../middlewares';
+import {
+  changePasswordSchema,
+  loginSchema,
+  refreshTokenSchema,
+  registerSchema,
+} from './auth.dto';
 import { asyncHandler } from '../../common/utils';
 
 const router = Router();
@@ -95,5 +100,43 @@ router.post('/login', validate(loginSchema), asyncHandler(controller.login));
  *         description: Invalid refresh token
  */
 router.post('/refresh', validate(refreshTokenSchema), asyncHandler(controller.refresh));
+
+/**
+ * @openapi
+ * /auth/change-password:
+ *   patch:
+ *     tags: [Auth]
+ *     summary: Change current user password
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [currentPassword, newPassword, confirmNewPassword]
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *                 example: OldPassword123
+ *               newPassword:
+ *                 type: string
+ *                 example: NewPassword123
+ *               confirmNewPassword:
+ *                 type: string
+ *                 example: NewPassword123
+ *     responses:
+ *       200:
+ *         description: Password changed successfully
+ *       401:
+ *         description: Invalid current password or authentication required
+ */
+router.patch(
+  '/change-password',
+  authenticate,
+  validate(changePasswordSchema),
+  asyncHandler(controller.changePassword),
+);
 
 export default router;
