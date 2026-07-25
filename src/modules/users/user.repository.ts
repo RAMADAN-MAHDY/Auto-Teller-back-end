@@ -16,6 +16,13 @@ export class UserRepository extends BaseRepository<IUser> {
   }
 
   /**
+   * Find a user by id including password for auth operations.
+   */
+  async findByIdWithPassword(id: string): Promise<IUser | null> {
+    return this.model.findById(id).select('+password').exec();
+  }
+
+  /**
    * Find a user by email WITHOUT the password (for profile/display).
    */
   async findByEmailPublic(email: string): Promise<IUser | null> {

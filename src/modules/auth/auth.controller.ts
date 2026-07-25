@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import Container, { Service } from 'typedi';
 import { AuthService } from './auth.service';
-import { LoginDto, RefreshTokenDto, RegisterDto } from './auth.dto';
+import { ChangePasswordDto, LoginDto, RefreshTokenDto, RegisterDto } from './auth.dto';
 import { sendCreated, sendSuccess } from '../../common/utils';
+import { AuthenticatedRequest } from '../../common/interfaces';
+import { UnauthorizedException } from '../../common/exceptions';
 
 @Service()
 export class AuthController {
@@ -33,5 +35,20 @@ export class AuthController {
     const { refreshToken } = req.body as RefreshTokenDto;
     const result = await this.authService.refreshToken(refreshToken);
     sendSuccess(res, result, 'Token refreshed successfully');
+  };
+
+  /**
+   * PATCH /api/v1/auth/change-password
+   */
+  changePassword = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const dto = req.body as ChangePasswordDto;
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      throw new UnauthorizedException('Authentication required');
+    }
+
+    const result = await this.authService.changePassword(userId, dto);
+    sendSuccess(res, result, 'Password changed successfully');
   };
 }

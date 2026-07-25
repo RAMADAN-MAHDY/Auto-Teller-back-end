@@ -28,6 +28,26 @@ export const refreshTokenSchema = z.object({
 
 export type RefreshTokenDto = z.infer<typeof refreshTokenSchema>;
 
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Current password is required'),
+    newPassword: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .max(128)
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+        'Password must contain at least one uppercase letter, one lowercase letter, and one digit',
+      ),
+    confirmNewPassword: z.string().min(1, 'Confirm new password is required'),
+  })
+  .refine((data) => data.newPassword === data.confirmNewPassword, {
+    message: 'New password and confirmation must match',
+    path: ['confirmNewPassword'],
+  });
+
+export type ChangePasswordDto = z.infer<typeof changePasswordSchema>;
+
 // Response DTOs (not Zod schemas — used for type safety in responses)
 export interface LoginResponseDto {
   user: {
