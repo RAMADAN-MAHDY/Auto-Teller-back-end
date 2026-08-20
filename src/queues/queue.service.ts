@@ -10,6 +10,7 @@ import { WhatsAppProvider } from '../providers/whatsapp.provider';
 import { renderTemplate } from '../common/utils/template-engine';
 import { logger } from '../logger';
 import { CustomerService } from '../modules/customers/customer.service'; // Import CustomerService
+import { decrypt } from '../common/utils/encryption';
 
 @Service()
 export class QueueService {
@@ -164,10 +165,12 @@ export class QueueService {
     }
 
     // Create Message entries in bulk to ensure they exist before sending
+    // customer.phoneNumberEncrypted must be decrypted here: this is the real
+    // number the WhatsApp provider will send to, so it can't stay encrypted.
     const messagesToCreate = customers.data.map((customer) => ({
       campaignId: campaign._id,
       customerId: customer._id,
-      phoneNumber: customer.phoneNumber,
+      phoneNumber: decrypt(customer.phoneNumberEncrypted),
       status: MessageStatus.PENDING,
     }));
 
@@ -191,16 +194,27 @@ export class QueueService {
         const monthIndex = new Date(customer.dueDate).getMonth();
         const monthName = arabicMonths[monthIndex];
 
+        // Decrypt sensitive fields here — this is the only place they're
+        // needed in plaintext, to fill the WhatsApp template variables.
+        const decryptedFullName = decrypt(customer.fullNameEncrypted);
+        const decryptedPhoneNumber = decrypt(customer.phoneNumberEncrypted);
+        const decryptedGuarantorName = customer.guarantorNameEncrypted
+          ? decrypt(customer.guarantorNameEncrypted)
+          : '';
+        const decryptedGuarantorPhone = customer.guarantorPhoneEncrypted
+          ? decrypt(customer.guarantorPhoneEncrypted)
+          : '';
+
         const variables: Record<string, string | number | Date> = {
-          fullName: customer.fullName,
-          phoneNumber: customer.phoneNumber,
-          guarantorName: customer.guarantorName || '',
-          guarantorPhone: customer.guarantorPhone || '',
+          fullName: decryptedFullName,
+          phoneNumber: decryptedPhoneNumber,
+          guarantorName: decryptedGuarantorName,
+          guarantorPhone: decryptedGuarantorPhone,
           dueDate: customer.dueDate,
           overdueDays: customer.overdueDays,
           customerGroup: customer.customerGroup,
           // Support template variable aliases/variations
-          customer: customer.fullName,
+          customer: decryptedFullName,
           month: monthName,
           day: customer.overdueDays,
         };

@@ -41,6 +41,16 @@ const envSchema = z.object({
 
   // Logging
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'http', 'debug']).default('debug'),
+
+  // Encryption and HMAC keys (must be 64-char hex strings = 32 bytes)
+  ENCRYPTION_KEY: z
+    .string()
+    .regex(/^[0-9a-fA-F]{64}$/, 'ENCRYPTION_KEY must be a 64-character hex string (32 bytes)'),
+
+  HMAC_KEY: z
+    .string()
+    .regex(/^[0-9a-fA-F]{64}$/, 'HMAC_KEY must be a 64-character hex string (32 bytes)'),
+
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

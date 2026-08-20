@@ -1,11 +1,29 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
 import { CustomerGroup } from '../../common/constants';
 
+/**
+ * Sensitive fields (fullName, phoneNumber, guarantorName, guarantorPhone) are
+ * encrypted at rest. Plaintext values are NEVER stored directly on this model.
+ *
+ * For each sensitive field we may store up to 3 sub-fields:
+ * - `<field>Encrypted`: AES-256-GCM ciphertext (random IV) — holds the real value.
+ * - `<field>Hash`: deterministic HMAC-SHA256 — used for exact-match lookups /
+ *   uniqueness constraints (e.g. phoneNumberHash has the unique index that
+ *   phoneNumber used to have).
+ * - `<field>Index`: array of HMAC-SHA256 trigrams — used for partial/substring
+ *   search (e.g. fullNameIndex replaces the old text index on fullName).
+ *
+ * Encryption/decryption and hash/index generation happen in the service layer
+ * (see customer.service.ts), NOT here — this model only defines storage shape.
+ */
 export interface ICustomer extends Document {
-  fullName: string;
-  phoneNumber: string;
-  guarantorName?: string;
-  guarantorPhone?: string;
+  fullNameEncrypted: string;
+  fullNameIndex: string[];
+  phoneNumberEncrypted: string;
+  phoneNumberHash: string;
+  guarantorNameEncrypted?: string;
+  guarantorPhoneEncrypted?: string;
+  guarantorPhoneHash?: string;
   dueDate: Date;
   importedOverdueDays?: number;
   overdueDays: number;
@@ -18,29 +36,31 @@ export interface ICustomer extends Document {
 
 const customerSchema = new Schema<ICustomer>(
   {
-    fullName: {
+    fullNameEncrypted: {
       type: String,
       required: [true, 'Full name is required'],
-      trim: true,
-      minlength: [2, 'Name must be at least 2 characters'],
-      maxlength: [150, 'Name must be at most 150 characters'],
     },
-    phoneNumber: {
+    fullNameIndex: {
+      type: [String],
+      default: [],
+    },
+    phoneNumberEncrypted: {
+      type: String,
+      required: [true, 'Phone number is required'],
+    },
+    phoneNumberHash: {
       type: String,
       required: [true, 'Phone number is required'],
       unique: true,
-      trim: true,
-      match: [/^\+?\d{10,15}$/, 'Please enter a valid phone number'],
     },
-    guarantorName: {
+    guarantorNameEncrypted: {
       type: String,
-      trim: true,
-      maxlength: [150, 'Guarantor name must be at most 150 characters'],
     },
-    guarantorPhone: {
+    guarantorPhoneEncrypted: {
       type: String,
-      trim: true,
-      match: [/^\+?\d{10,15}$/, 'Please enter a valid guarantor phone number'],
+    },
+    guarantorPhoneHash: {
+      type: String,
     },
     dueDate: {
       type: Date,
@@ -84,10 +104,10 @@ const customerSchema = new Schema<ICustomer>(
 );
 
 // Indexes
-// Note: phoneNumber already has unique: true in schema definition
+// Note: phoneNumberHash already has unique: true in schema definition
 customerSchema.index({ customerGroup: 1 });
 customerSchema.index({ dueDate: 1 });
-customerSchema.index({ fullName: 'text' });
+customerSchema.index({ fullNameIndex: 1 });
 customerSchema.index({ tags: 1 });
 
 export const CustomerModel = mongoose.model<ICustomer>('Customer', customerSchema);
