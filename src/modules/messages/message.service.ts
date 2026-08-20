@@ -5,6 +5,7 @@ import { MessageQueryDto, MessageResponseDto } from './message.dto';
 import { NotFoundException } from '../../common/exceptions';
 import { IPaginatedResult } from '../../common/interfaces';
 import { IMessage } from './message.model';
+import { decrypt } from '../../common/utils/encryption';
 
 @Service()
 export class MessageService {
@@ -24,10 +25,10 @@ export class MessageService {
       limit: query.limit,
       sort: 'createdAt',
       order: 'desc',
-    }, { path: 'customerId', select: 'fullName' });
+    }, { path: 'customerId', select: 'fullNameEncrypted' });
 
     return {
-      data: result.data.map(this.toResponseDto),
+      data: result.data.map((message) => this.toResponseDto(message)),
       meta: result.meta,
     };
   }
@@ -37,18 +38,22 @@ export class MessageService {
     if (!message) {
       throw new NotFoundException('Message log not found');
     }
-    await message.populate('customerId', 'fullName');
+    await message.populate('customerId', 'fullNameEncrypted');
     return this.toResponseDto(message);
   }
 
   private toResponseDto(message: IMessage): MessageResponseDto {
     const customer = message.customerId as any;
+    // customer.fullNameEncrypted is only populated when the customer still
+    // exists; decrypt it here for the response, falling back gracefully
+    // otherwise (deleted customer, or population not requested).
+    const fullName = customer?.fullNameEncrypted ? decrypt(customer.fullNameEncrypted) : undefined;
     return {
       id: message.id,
       campaignId: message.campaignId.toString(),
       customer: {
         id: customer?.id || customer?._id?.toString() || '',
-        fullName: customer?.fullName || 'Unknown Customer',
+        fullName: fullName || 'Unknown Customer',
       },
       whatsappMessageId: message.whatsappMessageId,
       phoneNumber: message.phoneNumber,

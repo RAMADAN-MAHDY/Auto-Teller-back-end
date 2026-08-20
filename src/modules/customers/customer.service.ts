@@ -9,6 +9,14 @@ import { logger } from '../../logger';
 import { ImportCustomerDto } from './import-customer.dto';
 import { calculateCustomerGroupAndOverdueDays } from '../../common/utils';
 import { CustomerGroup } from '../../common/constants';
+import {
+  encrypt,
+  decrypt,
+  hmac,
+  hmacTrigrams,
+  normalize,
+  normalizePhone,
+} from '../../common/utils/encryption';
 
 @Service()
 export class CustomerService {
@@ -25,13 +33,13 @@ export class CustomerService {
     const { overdueDays, customerGroup } = calculateCustomerGroupAndOverdueDays(dueDate);
 
     const customer = await this.customerRepository.create({
-      ...dto,
+      ...this.toEncryptedFields(dto),
       dueDate,
       importedOverdueDays: dto.importedOverdueDays ?? 0,
       overdueDays,
       customerGroup,
     } as any);
-    logger.info(`Customer created: ${customer.fullName} (${customer.phoneNumber})`);
+    logger.info(`Customer created: ${customer.phoneNumberHash}`);
     return this.toResponseDto(customer);
   }
 
@@ -53,12 +61,9 @@ export class CustomerService {
         // 3. Process tags (comma-separated string to array)
         // const tagsArray = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
 
-        // 4. Prepare customer data for upsert
+        // 4. Prepare customer data for upsert (encrypted + hashed)
         const customerToUpsert: Partial<ICustomer> = {
-          fullName: data.fullName,
-          phoneNumber: data.phoneNumber,
-          guarantorName: data.guarantorName || undefined,
-          guarantorPhone: data.guarantorPhone || undefined,
+          ...this.toEncryptedFields(data),
           dueDate: dueDate,
           importedOverdueDays: data.importedOverdueDays ?? 0,
           overdueDays: overdueDays,
@@ -77,7 +82,7 @@ export class CustomerService {
         }
       } catch (error: any) {
         failedCount++;
-        const errorMessage = `Failed to import customer ${data.fullName || data.phoneNumber}: ${error.message || 'Unknown error'}`;
+        const errorMessage = `Failed to import customer ${data.phoneNumber}: ${error.message || 'Unknown error'}`;
         errors.push(errorMessage);
         logger.error(errorMessage);
       }
@@ -91,7 +96,13 @@ export class CustomerService {
     const filter: FilterQuery<ICustomer> = {};
 
     if (query.search) {
-      filter.fullName = { $regex: query.search, $options: 'i' };
+      // Partial name search over encrypted data: translate the search text
+      // into the same HMAC trigrams used at write time, then match documents
+      // whose fullNameIndex contains ALL of those trigrams.
+      const searchTrigrams = hmacTrigrams(query.search);
+      if (searchTrigrams.length > 0) {
+        filter.fullNameIndex = { $all: searchTrigrams };
+      }
     }
     if (query.customerGroup) {
       filter.customerGroup = query.customerGroup;
@@ -108,7 +119,7 @@ export class CustomerService {
     });
 
     return {
-      data: result.data.map(this.toResponseDto),
+      data: result.data.map((customer) => this.toResponseDto(customer)),
       meta: result.meta,
     };
   }
@@ -129,7 +140,7 @@ export class CustomerService {
       }
     }
 
-    const updateData: Partial<ICustomer> = { ...dto } as any;
+    const updateData: Partial<ICustomer> = this.toEncryptedFields(dto, { partial: true });
     if (dto.dueDate) {
       const newDueDate = new Date(dto.dueDate);
       const { overdueDays, customerGroup } = calculateCustomerGroupAndOverdueDays(newDueDate);
@@ -143,7 +154,7 @@ export class CustomerService {
       throw new NotFoundException('Customer not found');
     }
 
-    logger.info(`Customer updated: ${customer.fullName}`);
+    logger.info(`Customer updated: ${customer.id}`);
     return this.toResponseDto(customer);
   }
 
@@ -152,7 +163,7 @@ export class CustomerService {
     if (!customer) {
       throw new NotFoundException('Customer not found');
     }
-    logger.info(`Customer deleted: ${customer.fullName}`);
+    logger.info(`Customer deleted: ${customer.id}`);
   }
 
   async deleteAll(): Promise<{ deletedCount: number }> {
@@ -161,13 +172,57 @@ export class CustomerService {
     return result;
   }
 
+  /**
+   * Encrypts sensitive plaintext fields coming from a DTO and derives their
+   * blind-index counterparts (hash / trigram index).
+   *
+   * `partial: true` is used for updates, where some fields may be undefined
+   * and must simply be omitted (not overwritten with empty/garbage values).
+   */
+  private toEncryptedFields(
+    dto: Partial<CreateCustomerDto | UpdateCustomerDto | ImportCustomerDto>,
+    { partial = false }: { partial?: boolean } = {},
+  ): Partial<ICustomer> {
+    const fields: Partial<ICustomer> = {};
+
+    if (dto.fullName !== undefined) {
+      fields.fullNameEncrypted = encrypt(dto.fullName);
+      fields.fullNameIndex = hmacTrigrams(dto.fullName);
+    } else if (!partial) {
+      throw new BadRequestException('Full name is required');
+    }
+
+    if (dto.phoneNumber !== undefined) {
+      const normalizedPhone = normalizePhone(dto.phoneNumber);
+      fields.phoneNumberEncrypted = encrypt(dto.phoneNumber);
+      fields.phoneNumberHash = hmac(normalizedPhone);
+    } else if (!partial) {
+      throw new BadRequestException('Phone number is required');
+    }
+
+    if (dto.guarantorName) {
+      fields.guarantorNameEncrypted = encrypt(dto.guarantorName);
+    }
+
+    if (dto.guarantorPhone) {
+      fields.guarantorPhoneEncrypted = encrypt(dto.guarantorPhone);
+      fields.guarantorPhoneHash = hmac(normalizePhone(dto.guarantorPhone));
+    }
+
+    return fields;
+  }
+
+  /**
+   * Decrypts sensitive fields for API responses. This is the ONLY place
+   * plaintext customer data should be reconstructed outside of writes.
+   */
   private toResponseDto(customer: ICustomer): CustomerResponseDto {
     return {
       id: customer.id,
-      fullName: customer.fullName,
-      phoneNumber: customer.phoneNumber,
-      guarantorName: customer.guarantorName,
-      guarantorPhone: customer.guarantorPhone,
+      fullName: decrypt(customer.fullNameEncrypted),
+      phoneNumber: decrypt(customer.phoneNumberEncrypted),
+      guarantorName: customer.guarantorNameEncrypted ? decrypt(customer.guarantorNameEncrypted) : undefined,
+      guarantorPhone: customer.guarantorPhoneEncrypted ? decrypt(customer.guarantorPhoneEncrypted) : undefined,
       dueDate: customer.dueDate,
       importedOverdueDays: customer.importedOverdueDays ?? 0,
       overdueDays: customer.overdueDays,
@@ -181,7 +236,8 @@ export class CustomerService {
 
   /**
    * Recalculates overdue days and customer group for all customers.
-   * Used by the daily scheduler.
+   * Used by the daily scheduler. No sensitive fields are touched here,
+   * so no encryption/decryption is needed.
    */
   async recalculateAllCustomerGroups(): Promise<{ updatedCount: number }> {
     const customers = await this.customerRepository.findAllCustomers();

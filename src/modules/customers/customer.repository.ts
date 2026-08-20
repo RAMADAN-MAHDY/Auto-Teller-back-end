@@ -4,6 +4,7 @@ import { BaseRepository } from '../../database/base.repository';
 import { CustomerModel, ICustomer } from './customer.model';
 import { IPaginatedResult, IPaginationQuery } from '../../common/interfaces';
 import { CustomerGroup } from '../../common/constants';
+import { hmac, normalizePhone } from '../../common/utils/encryption';
 
 @Service()
 export class CustomerRepository extends BaseRepository<ICustomer> {
@@ -13,9 +14,13 @@ export class CustomerRepository extends BaseRepository<ICustomer> {
 
   /**
    * Find a customer by phone number.
+   * The caller still passes the plaintext phone number; we hash it here
+   * (same normalization + HMAC key used at write time) and look it up via
+   * the phoneNumberHash blind index, since the raw number is never stored.
    */
   async findByPhoneNumber(phoneNumber: string): Promise<ICustomer | null> {
-    return this.model.findOne({ phoneNumber }).exec();
+    const phoneNumberHash = hmac(normalizePhone(phoneNumber));
+    return this.model.findOne({ phoneNumberHash }).exec();
   }
 
   /**
@@ -30,10 +35,15 @@ export class CustomerRepository extends BaseRepository<ICustomer> {
 
   /**
    * Upsert a customer by phone number.
+   * `customerData` must already contain the encrypted/hashed fields
+   * (phoneNumberEncrypted, phoneNumberHash, fullNameEncrypted, fullNameIndex, ...)
+   * prepared by the service layer — this method only resolves *which* document
+   * to match via the blind index.
    */
   async upsertByPhoneNumber(phoneNumber: string, customerData: Partial<ICustomer>): Promise<ICustomer> {
+    const phoneNumberHash = hmac(normalizePhone(phoneNumber));
     return this.model.findOneAndUpdate(
-      { phoneNumber: phoneNumber },
+      { phoneNumberHash },
       customerData,
       { upsert: true, new: true, setDefaultsOnInsert: true },
     ).exec();
