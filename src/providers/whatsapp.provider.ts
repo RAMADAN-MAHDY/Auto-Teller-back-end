@@ -84,7 +84,7 @@ export class WhatsAppProvider {
     to: string,
     templateName: string,
     variables: string[],
-    languageCode = 'ar_EG'
+    languageCode = 'en_US'
   ): Promise<ISendMessageResponse> {
     try {
       const cleanedPhone = this.cleanPhoneNumber(to);

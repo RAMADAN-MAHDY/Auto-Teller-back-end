@@ -143,7 +143,7 @@ export class TemplateService {
       let template = await this.templateRepository.findOne({ name: mt.name, isMeta: true });
       if (template) {
         template.category = mt.category || 'default';
-        template.languageCode = mt.language_code || 'ar_EG';
+        template.languageCode = mt.language_code || 'en_US';
         template.metaTemplateId = mt.id;
         template.status = mt.status;
         template.body = fullText;
@@ -188,7 +188,7 @@ export class TemplateService {
       let template = await this.templateRepository.findOne({ name: mt.name, isMeta: true });
       if (template) {
         template.category = mt.category || 'default';
-        template.languageCode = mt.language_code || 'ar_EG';
+        template.languageCode = mt.language_code || 'en_US';
         template.metaTemplateId = mt.id;
         template.status = mt.status;
         template.body = fullText;
