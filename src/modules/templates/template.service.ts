@@ -143,7 +143,7 @@ export class TemplateService {
       let template = await this.templateRepository.findOne({ name: mt.name, isMeta: true });
       if (template) {
         template.category = mt.category || 'default';
-        template.languageCode = mt.language_code || 'en_US';
+        template.languageCode = mt.language || 'en';
         template.metaTemplateId = mt.id;
         template.status = mt.status;
         template.body = fullText;
@@ -153,7 +153,7 @@ export class TemplateService {
         template = await this.templateRepository.create({
           name: mt.name,
           category: mt.category || 'default',
-          languageCode: mt.language_code || 'ar_EG',
+          languageCode: mt.language || 'en',
           metaTemplateId: mt.id,
           status: mt.status,
           body: fullText,
@@ -188,7 +188,7 @@ export class TemplateService {
       let template = await this.templateRepository.findOne({ name: mt.name, isMeta: true });
       if (template) {
         template.category = mt.category || 'default';
-        template.languageCode = mt.language_code || 'en_US';
+        template.languageCode = mt.language || 'en';
         template.metaTemplateId = mt.id;
         template.status = mt.status;
         template.body = fullText;
@@ -198,7 +198,7 @@ export class TemplateService {
         template = await this.templateRepository.create({
           name: mt.name,
           category: mt.category || 'default',
-          languageCode: mt.language_code || 'ar_EG',
+          languageCode: mt.language || 'en',
           metaTemplateId: mt.id,
           status: mt.status,
           body: fullText,
