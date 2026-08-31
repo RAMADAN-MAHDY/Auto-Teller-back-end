@@ -10,3 +10,10 @@ export {
 } from './token';
 export { renderTemplate, extractVariables } from './template-engine';
 export { calculateCustomerGroupAndOverdueDays } from './customer-utils';
+export {
+  parseExcelDate,
+  normalizeArabicNumerals,
+  normalizePhoneNumber,
+  detectExcelColumns,
+  type ExcelColumnMapping,
+} from './excel-parser';
