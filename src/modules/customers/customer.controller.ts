@@ -2,7 +2,15 @@ import { Request, Response } from 'express';
 import Container, { Service } from 'typedi';
 import { CustomerService } from './customer.service';
 import { CreateCustomerDto, UpdateCustomerDto, CustomerQueryDto } from './customer.dto';
-import { sendSuccess, sendCreated, sendNoContent } from '../../common/utils';
+import {
+  sendSuccess,
+  sendCreated,
+  sendNoContent,
+  parseExcelDate,
+  normalizeArabicNumerals,
+  normalizePhoneNumber,
+  detectExcelColumns,
+} from '../../common/utils';
 import * as ExcelJS from 'exceljs';
 import { BadRequestException } from '../../common/exceptions';
 import { ImportCustomerDto, importCustomerSchema } from './import-customer.dto';
@@ -31,29 +39,67 @@ export class CustomerController {
         throw new BadRequestException('No worksheet found in the Excel file');
       }
 
+      const headerRow = worksheet.getRow(1);
+      const colMap = detectExcelColumns(headerRow);
+
       const jsonData: ImportCustomerDto[] = [];
       worksheet.eachRow((row, rowNumber) => {
         if (rowNumber === 1) return; // Skip header row
 
-        const rowData: any = {};
-        rowData.fullName = row.getCell(1).value?.toString() || '';
-        rowData.phoneNumber = row.getCell(2).value?.toString() || '';
-        rowData.guarantorName = row.getCell(3).value?.toString() || '';
-        rowData.guarantorPhone = row.getCell(4).value?.toString() || '';
-        rowData.dueDate = row.getCell(5).value ? new Date(row.getCell(5).value as any).toISOString() : '';
-        rowData.importedOverdueDays = row.getCell(6).value ? Number(row.getCell(6).value) : 0;
-        // Add other fields as needed, mapping Excel columns to DTO fields
-        // For example, if notes is column 7, tags is column 8
-        // rowData.notes = row.getCell(7).value?.toString() || '';
-        // rowData.tags = row.getCell(8).value?.toString() || '';
+        const fullName = row.getCell(colMap.fullName).value?.toString()?.trim() || '';
+        const phoneNumber = normalizePhoneNumber(row.getCell(colMap.phoneNumber).value);
+
+        // Skip blank rows
+        if (!fullName && !phoneNumber) {
+          return;
+        }
+
+        const parsedDueDate = parseExcelDate(row.getCell(colMap.dueDate).value);
+        const guarantorName = colMap.guarantorName
+          ? row.getCell(colMap.guarantorName).value?.toString()?.trim() || ''
+          : '';
+        const guarantorPhone = colMap.guarantorPhone
+          ? normalizePhoneNumber(row.getCell(colMap.guarantorPhone).value)
+          : '';
+
+        const rawOverdue = colMap.importedOverdueDays
+          ? row.getCell(colMap.importedOverdueDays).value
+          : undefined;
+        const parsedOverdue =
+          rawOverdue !== undefined && rawOverdue !== null && rawOverdue !== ''
+            ? Number(normalizeArabicNumerals(rawOverdue))
+            : 0;
+
+        const rowData: Record<string, any> = {
+          fullName,
+          phoneNumber,
+          guarantorName: guarantorName || undefined,
+          guarantorPhone: guarantorPhone || undefined,
+          dueDate: parsedDueDate ? parsedDueDate.toISOString() : '',
+          importedOverdueDays: !isNaN(parsedOverdue) ? parsedOverdue : 0,
+        };
+
+        if (colMap.notes) {
+          rowData.notes = row.getCell(colMap.notes).value?.toString()?.trim() || undefined;
+        }
+        if (colMap.tags) {
+          rowData.tags = row.getCell(colMap.tags).value?.toString()?.trim() || undefined;
+        }
 
         try {
           const validatedRow = importCustomerSchema.parse(rowData);
           jsonData.push(validatedRow);
         } catch (validationError: any) {
-          throw new BadRequestException(`Validation error on row ${rowNumber}: ${validationError.errors.map((err: any) => err.message).join(', ')}`);
+          const errMsg = validationError.errors
+            ? validationError.errors.map((err: any) => `${err.path.join('.')}: ${err.message}`).join(', ')
+            : validationError.message;
+          throw new BadRequestException(`Validation error on row ${rowNumber}: ${errMsg}`);
         }
       });
+
+      if (jsonData.length === 0) {
+        throw new BadRequestException('The uploaded file does not contain any valid customer rows');
+      }
 
       const result = await this.customerService.importCustomers(jsonData);
       sendSuccess(res, result, 'Customer import process completed');
