@@ -57,6 +57,7 @@ export class MessageService {
       },
       whatsappMessageId: message.whatsappMessageId,
       phoneNumber: message.phoneNumber,
+      recipientType: message.recipientType || 'customer',
       status: message.status,
       error: message.error,
       sentAt: message.sentAt,

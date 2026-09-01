@@ -164,15 +164,40 @@ export class QueueService {
       return;
     }
 
-    // Create Message entries in bulk to ensure they exist before sending
-    // customer.phoneNumberEncrypted must be decrypted here: this is the real
-    // number the WhatsApp provider will send to, so it can't stay encrypted.
-    const messagesToCreate = customers.data.map((customer) => ({
-      campaignId: campaign._id,
-      customerId: customer._id,
-      phoneNumber: decrypt(customer.phoneNumberEncrypted),
-      status: MessageStatus.PENDING,
-    }));
+    // Create Message entries in bulk for both customers and guarantors (if exists)
+    const messagesToCreate: Array<{
+      campaignId: any;
+      customerId: any;
+      phoneNumber: string;
+      recipientType: 'customer' | 'guarantor';
+      status: MessageStatus;
+    }> = [];
+
+    for (const customer of customers.data) {
+      const customerPhone = decrypt(customer.phoneNumberEncrypted);
+      if (customerPhone) {
+        messagesToCreate.push({
+          campaignId: campaign._id,
+          customerId: customer._id,
+          phoneNumber: customerPhone,
+          recipientType: 'customer',
+          status: MessageStatus.PENDING,
+        });
+      }
+
+      const guarantorPhone = customer.guarantorPhoneEncrypted
+        ? decrypt(customer.guarantorPhoneEncrypted)?.trim()
+        : '';
+      if (guarantorPhone && guarantorPhone !== customerPhone) {
+        messagesToCreate.push({
+          campaignId: campaign._id,
+          customerId: customer._id,
+          phoneNumber: guarantorPhone,
+          recipientType: 'guarantor',
+          status: MessageStatus.PENDING,
+        });
+      }
+    }
 
     // Perform bulk write in Mongo
     const createdMessages = await this.messageRepository.bulkCreate(messagesToCreate);

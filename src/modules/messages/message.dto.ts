@@ -18,6 +18,7 @@ export interface MessageResponseDto {
   };
   whatsappMessageId?: string;
   phoneNumber: string;
+  recipientType?: 'customer' | 'guarantor';
   status: MessageStatus;
   error?: string;
   sentAt?: Date;
