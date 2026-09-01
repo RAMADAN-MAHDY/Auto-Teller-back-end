@@ -23,6 +23,14 @@ export async function connectDatabase(): Promise<void> {
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
     });
+
+    // Drop deprecated index if still present in the MongoDB collection
+    try {
+      await mongoose.connection.collection('messages').dropIndex('campaignId_1_customerId_1');
+      logger.info('🗑️ Dropped deprecated unique index campaignId_1_customerId_1 from messages collection');
+    } catch {
+      // Index already dropped or doesn't exist
+    }
   } catch (error) {
     logger.error('❌ Failed to connect to MongoDB:', error);
     process.exit(1);
