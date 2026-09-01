@@ -6,6 +6,7 @@ export interface IMessage extends Document {
   customerId: Types.ObjectId;
   whatsappMessageId?: string;
   phoneNumber: string;
+  recipientType?: 'customer' | 'guarantor';
   status: MessageStatus;
   error?: string;
   sentAt?: Date;
@@ -36,6 +37,11 @@ const messageSchema = new Schema<IMessage>(
       required: [true, 'Phone number is required'],
       trim: true,
     },
+    recipientType: {
+      type: String,
+      enum: ['customer', 'guarantor'],
+      default: 'customer',
+    },
     status: {
       type: String,
       enum: Object.values(MessageStatus),
@@ -61,7 +67,7 @@ const messageSchema = new Schema<IMessage>(
 );
 
 // Indexes
-messageSchema.index({ campaignId: 1, customerId: 1 }, { unique: true });
+messageSchema.index({ campaignId: 1, customerId: 1, phoneNumber: 1 }, { unique: true });
 messageSchema.index({ campaignId: 1, status: 1 });
 messageSchema.index({ whatsappMessageId: 1 });
 messageSchema.index({ phoneNumber: 1 });
