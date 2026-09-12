@@ -9,7 +9,7 @@ export {
   generateTokenPair,
 } from './token';
 export { renderTemplate, extractVariables } from './template-engine';
-export { calculateCustomerGroupAndOverdueDays } from './customer-utils';
+export { calculateCustomerGroupAndOverdueDays, calculateCustomerGroupFromImportedOverdueDays } from './customer-utils';
 export {
   parseExcelDate,
   normalizeArabicNumerals,

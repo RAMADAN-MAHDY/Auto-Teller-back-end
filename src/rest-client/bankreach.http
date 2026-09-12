@@ -1,14 +1,17 @@
 @host = https://auto-teller-back-end-production.up.railway.app
+#  @host = http://localhost:3000
+
 @baseUrl = https://auto-teller-back-end-production.up.railway.app/api/v1
+#  @baseUrl = http://localhost:3000/api/v1
 
-@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTNlMTg5YjM0MTRhM2UwOGM1OWY3NjQiLCJlbWFpbCI6ImFkbWluXzJAYmFua3JlYWNoLmNvbSIsInJvbGUiOiJlbXBsb3llZSIsImlhdCI6MTc4MjQ1ODA0MCwiZXhwIjoxNzgyNDU4OTQwfQ.0ezXF1nOQ_Dc_M330yIzMsoO-2H-hKyEnEsXbeoQgrc
-@refreshToken =
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTg2ZjIxZjI2MDk5MWM2MzgwODU4ZGYiLCJlbWFpbCI6ImFkbWluXzNAYmFua3JlYWNoLmNvbSIsInJvbGUiOiJlbXBsb3llZSIsImlhdCI6MTc4OTE5NTg3NiwiZXhwIjoxNzg5MTk2Nzc2fQ.DvOoyR1cVlqWzBoUY9yIiR3Rqn1jQH41iTAw6qKNN40
+@refreshToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTNlMTg5YjM0MTRhM2UwOGM1OWY3NjQiLCJlbWFpbCI6ImFkbWluXzJAYmFua3JlYWNoLmNvbSIsInJvbGUiOiJlbXBsb3llZSIsImlhdCI6MTc4MjQ5MjA3MywiZXhwIjoxNzgzMDk2ODczfQ.IS_zXOpWrEXqWGboBgR780NUj_prLYs5H6s-e2br8wk
 
-@userId = 6a3e129b3414a3e08c59f758
-@customerId =6a3a2fb218cae4e4ceb3f71a
-@customerGroup = LATE
-@templateId = 6a3e20423414a3e08c59f789
-@campaignId =6a3e221f3414a3e08c59f790
+@userId = 6a86f3402fc24f6e7b59b478
+@customerId =6a86f37e2fc24f6e7b59b47c
+@customerGroup = DEFAULTED
+@templateId = 6a48f5373649805ddab679d6
+@campaignId =6a95785158b4fff375273bab
 @messageId = 6a3a4abc84ccb4fad13566b9
 
 @webhookVerifyToken = BankReach_Webhook_Verify_2026_Secret
@@ -22,7 +25,7 @@ Content-Type: application/json
 
 {
   "name": "Admin",
-  "email": "admin_2@bankreach.com",
+  "email": "admin_3@bankreach.com",
   "password": "Password123",
   "role": "admin"
 }
@@ -32,8 +35,19 @@ POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-  "email": "admin_2@bankreach.com",
+  "email": "admin_3@bankreach.com",
   "password": "Password123"
+}
+
+### تغيير كلمة المرور (Change Password)
+PATCH {{baseUrl}}/auth/change-password
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "currentPassword": "NewPassword123",
+  "newPassword": "Password123",
+  "confirmNewPassword": "Password123"
 }
 
 ### تجديد التوكن (Refresh) باستخدام refreshToken
@@ -41,7 +55,7 @@ POST {{baseUrl}}/auth/refresh
 Content-Type: application/json
 
 {
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTNhMjYwZjE0NTY5MTUzZWE2ZGJhOTEiLCJlbWFpbCI6ImFkbWluQGJhbmtyZWFjaC5jb20iLCJyb2xlIjoiZW1wbG95ZWUiLCJpYXQiOjE3ODIxOTU3NzgsImV4cCI6MTc4MjgwMDU3OH0.9IuZlk1U4dPGpBfHkDi1QuPmnczZdl9-KNSC9HIq0LQ"
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTNlMTg5YjM0MTRhM2UwOGM1OWY3NjQiLCJlbWFpbCI6ImFkbWluXzJAYmFua3JlYWNoLmNvbSIsInJvbGUiOiJlbXBsb3llZSIsImlhdCI6MTc4MjQ5MjA3MywiZXhwIjoxNzgzMDk2ODczfQ.IS_zXOpWrEXqWGboBgR780NUj_prLYs5H6s-e2br8wk"
 }
 
 ### عرض قائمة المستخدمين (Pagination) - صلاحية Admin فقط
@@ -84,19 +98,24 @@ Authorization: Bearer {{accessToken}}
 
 {
   "fullName": "ramadan mahdy",
-  "phoneNumber": "+201021256762",
+  "phoneNumber": "01552699599",
   "guarantorName": "Mohamed",
-  "guarantorPhone": "+20111222233",
+  "guarantorPhone": "01017846522",
   "dueDate": "2026-06-01T00:00:00Z",
+  "dtOfOpen": "2024-06-01T00:00:00Z",
   "importedOverdueDays": 22
 }
+
+### عرض كل العملاء (Pagination)
+GET {{baseUrl}}/customers?page=1&limit=20
+Authorization: Bearer {{accessToken}}
 
 ### عرض العملاء مع بحث/فلترة + Pagination
 GET {{baseUrl}}/customers?page=1&limit=20&search=ramadan mahdy
 Authorization: Bearer {{accessToken}}
 
 ### جلب عميل واحد بالـ ID
-GET {{baseUrl}}/customers/{{customerId}}
+GET {{baseUrl}}/customers
 Authorization: Bearer {{accessToken}}
 
 ### تعديل عميل بالـ ID
@@ -105,9 +124,8 @@ Content-Type: application/json
 Authorization: Bearer {{accessToken}}
 
 {
-  "dueDate": "2026-07-01T00:00:00Z",
-  "notes": "Updated notes",
-  "tags": ["vip", "salary", "priority"]
+  "fullName": "Ramadan Mahdy3"
+  // You can update any thing
 }
 
 ### حذف عميل بالـ ID
@@ -120,10 +138,22 @@ Authorization: Bearer {{accessToken}}
 Content-Type: multipart/form-data; boundary=boundary
 
 --boundary
-Content-Disposition: form-data; name="file"; filename="bank_customers_dummy_data.xlsx"
+Content-Disposition: form-data; name="file"; filename="Test 3 30082026.xlsx"
 Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
 
-< ./bank_customers_dummy_data.xlsx
+< ./Test 3 30082026.xlsx
+--boundary--
+
+### اختبار استيراد ملف Excel مع DT_OF_OPEN وعدد أيام التأخير من الملف
+POST {{baseUrl}}/customers/import-excel
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="Test 3 30082026.xlsx"
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+
+< ./Test 3 30082026.xlsx
 --boundary--
 ### إنشاء قالب رسالة (Template)
 POST {{baseUrl}}/templates
@@ -136,7 +166,15 @@ Authorization: Bearer {{accessToken}}
 }
 
 ### عرض القوالب مع بحث + Pagination
-GET {{baseUrl}}/templates?page=1&limit=20&search=Welcome
+GET {{baseUrl}}/templates?page=1&limit=20&search=
+Authorization: Bearer {{accessToken}}
+
+### جلب قوالب Meta (Meta Approved Templates)
+GET {{baseUrl}}/templates/meta
+Authorization: Bearer {{accessToken}}
+
+### جلب ومزامنة قوالب Meta (Meta Approved Templates)
+POST {{baseUrl}}/templates/meta/sync
 Authorization: Bearer {{accessToken}}
 
 ### جلب قالب واحد بالـ ID
@@ -197,6 +235,10 @@ Authorization: Bearer {{accessToken}}
 GET {{baseUrl}}/messages/campaign/{{campaignId}}?page=1&limit=20
 Authorization: Bearer {{accessToken}}
 
+### جلب رسائل حملة بحالة محددة (Failed, Delivered, etc)
+GET {{baseUrl}}/messages/campaign/{{campaignId}}?status=failed
+Authorization: Bearer {{accessToken}}
+
 ### جلب Log رسالة واحد بالـ ID
 GET {{baseUrl}}/messages/{{messageId}}
 Authorization: Bearer {{accessToken}}
@@ -220,3 +262,7 @@ Content-Type: application/json
   "object": "whatsapp_business_account",
   "entry": []
 }
+
+### حذف جميع العملاء
+DELETE {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}} 

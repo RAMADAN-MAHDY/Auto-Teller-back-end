@@ -55,6 +55,9 @@ export class CustomerController {
         }
 
         const parsedDueDate = parseExcelDate(row.getCell(colMap.dueDate).value);
+        const parsedDtOfOpen = colMap.dtOfOpen
+          ? parseExcelDate(row.getCell(colMap.dtOfOpen).value)
+          : null;
         const guarantorName = colMap.guarantorName
           ? row.getCell(colMap.guarantorName).value?.toString()?.trim() || ''
           : '';
@@ -76,6 +79,7 @@ export class CustomerController {
           guarantorName: guarantorName || undefined,
           guarantorPhone: guarantorPhone || undefined,
           dueDate: parsedDueDate ? parsedDueDate.toISOString() : '',
+          dtOfOpen: parsedDtOfOpen ? parsedDtOfOpen.toISOString() : '',
           importedOverdueDays: !isNaN(parsedOverdue) ? parsedOverdue : 0,
         };
 

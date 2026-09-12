@@ -137,6 +137,7 @@ export interface ExcelColumnMapping {
   guarantorName?: number;
   guarantorPhone?: number;
   dueDate: number;
+  dtOfOpen?: number;
   importedOverdueDays?: number;
   notes?: number;
   tags?: number;
@@ -166,6 +167,8 @@ export function detectExcelColumns(headerRow: Row): ExcelColumnMapping {
       } else if (phoneCount === 2 && !mapping.guarantorPhone) {
         mapping.guarantorPhone = colNumber;
       }
+    } else if (/dt_of_open|dt.*open|open.*date|تاريخ.*افتتاح|تاريخ.*فتح|date.*open/.test(rawVal)) {
+      mapping.dtOfOpen = colNumber;
     } else if (/استحقاق|due.*date|maturity/.test(rawVal)) {
       mapping.dueDate = colNumber;
     } else if (/تأخير|تاخير|overdue/.test(rawVal)) {
@@ -184,7 +187,8 @@ export function detectExcelColumns(headerRow: Row): ExcelColumnMapping {
     guarantorName: mapping.guarantorName || 3,
     guarantorPhone: mapping.guarantorPhone || 4,
     dueDate: mapping.dueDate || 5,
-    importedOverdueDays: mapping.importedOverdueDays || 6,
+    dtOfOpen: mapping.dtOfOpen || 6,
+    importedOverdueDays: mapping.importedOverdueDays || 7,
     notes: mapping.notes,
     tags: mapping.tags,
   };

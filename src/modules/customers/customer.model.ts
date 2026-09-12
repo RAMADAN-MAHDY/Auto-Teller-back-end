@@ -25,6 +25,7 @@ export interface ICustomer extends Document {
   guarantorPhoneEncrypted?: string;
   guarantorPhoneHash?: string;
   dueDate: Date;
+  dtOfOpen?: Date;
   importedOverdueDays?: number;
   overdueDays: number;
   customerGroup: CustomerGroup;
@@ -65,6 +66,9 @@ const customerSchema = new Schema<ICustomer>(
     dueDate: {
       type: Date,
       required: [true, 'Due date is required'],
+    },
+    dtOfOpen: {
+      type: Date,
     },
     importedOverdueDays: {
       type: Number,
