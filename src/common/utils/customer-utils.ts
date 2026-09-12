@@ -1,20 +1,26 @@
 import { differenceInDays } from 'date-fns';
 import { CustomerGroup } from '../constants';
 
-export function calculateCustomerGroupAndOverdueDays(dueDate: Date): { overdueDays: number; customerGroup: CustomerGroup } {
-  const today = new Date();
-  const overdueDays = differenceInDays(today, dueDate);
-
-  let customerGroup: CustomerGroup;
+export function calculateCustomerGroupFromImportedOverdueDays(overdueDays: number): CustomerGroup {
   if (overdueDays <= 0) {
-    customerGroup = CustomerGroup.COMPLIANT;
-  } else if (overdueDays >= 1 && overdueDays <= 30) {
-    customerGroup = CustomerGroup.LATE;
-  } else if (overdueDays >= 31 && overdueDays <= 90) {
-    customerGroup = CustomerGroup.DEFAULTED;
-  } else {
-    customerGroup = CustomerGroup.TRANSFERRED;
+    return CustomerGroup.COMPLIANT;
   }
 
-  return { overdueDays, customerGroup };
+  if (overdueDays >= 1 && overdueDays <= 30) {
+    return CustomerGroup.LATE;
+  }
+
+  if (overdueDays >= 31 && overdueDays <= 90) {
+    return CustomerGroup.DEFAULTED;
+  }
+
+  return CustomerGroup.TRANSFERRED;
+}
+
+export function calculateCustomerGroupAndOverdueDays(dueDate: Date, importedOverdueDays = 0): { overdueDays: number; customerGroup: CustomerGroup } {
+  const overdueDays = importedOverdueDays;
+  return {
+    overdueDays,
+    customerGroup: calculateCustomerGroupFromImportedOverdueDays(overdueDays),
+  };
 }

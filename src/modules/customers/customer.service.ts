@@ -7,8 +7,7 @@ import { IPaginatedResult } from '../../common/interfaces';
 import { ICustomer } from './customer.model';
 import { logger } from '../../logger';
 import { ImportCustomerDto } from './import-customer.dto';
-import { calculateCustomerGroupAndOverdueDays } from '../../common/utils';
-import { CustomerGroup } from '../../common/constants';
+import { calculateCustomerGroupFromImportedOverdueDays } from '../../common/utils';
 import {
   encrypt,
   decrypt,
@@ -30,12 +29,15 @@ export class CustomerService {
     }
 
     const dueDate = new Date(dto.dueDate);
-    const { overdueDays, customerGroup } = calculateCustomerGroupAndOverdueDays(dueDate);
+    const dtOfOpen = dto.dtOfOpen ? new Date(dto.dtOfOpen) : undefined;
+    const overdueDays = dto.importedOverdueDays ?? 0;
+    const customerGroup = calculateCustomerGroupFromImportedOverdueDays(overdueDays);
 
     const customer = await this.customerRepository.create({
       ...this.toEncryptedFields(dto),
       dueDate,
-      importedOverdueDays: dto.importedOverdueDays ?? 0,
+      dtOfOpen,
+      importedOverdueDays: overdueDays,
       overdueDays,
       customerGroup,
     } as any);
@@ -52,24 +54,19 @@ export class CustomerService {
 
     for (const data of customersData) {
       try {
-        // 1. Convert dueDate string to Date object
         const dueDate = new Date(data.dueDate);
+        const dtOfOpen = data.dtOfOpen ? new Date(data.dtOfOpen) : undefined;
 
-        // 2. Calculate overdueDays and customerGroup
-        const { overdueDays, customerGroup } = calculateCustomerGroupAndOverdueDays(dueDate);
+        const overdueDays = data.importedOverdueDays ?? 0;
+        const customerGroup = calculateCustomerGroupFromImportedOverdueDays(overdueDays);
 
-        // 3. Process tags (comma-separated string to array)
-        // const tagsArray = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
-
-        // 4. Prepare customer data for upsert (encrypted + hashed)
         const customerToUpsert: Partial<ICustomer> = {
           ...this.toEncryptedFields(data),
-          dueDate: dueDate,
-          importedOverdueDays: data.importedOverdueDays ?? 0,
-          overdueDays: overdueDays,
-          customerGroup: customerGroup,
-          // notes: data.notes || undefined,
-          // tags: tagsArray,
+          dueDate,
+          dtOfOpen,
+          importedOverdueDays: overdueDays,
+          overdueDays,
+          customerGroup,
         };
 
         // 5. Upsert customer by phone number
@@ -142,11 +139,15 @@ export class CustomerService {
 
     const updateData: Partial<ICustomer> = this.toEncryptedFields(dto, { partial: true });
     if (dto.dueDate) {
-      const newDueDate = new Date(dto.dueDate);
-      const { overdueDays, customerGroup } = calculateCustomerGroupAndOverdueDays(newDueDate);
-      updateData.dueDate = newDueDate;
-      updateData.overdueDays = overdueDays;
-      updateData.customerGroup = customerGroup;
+      updateData.dueDate = new Date(dto.dueDate);
+    }
+    if (dto.dtOfOpen) {
+      updateData.dtOfOpen = new Date(dto.dtOfOpen);
+    }
+    if (dto.importedOverdueDays !== undefined) {
+      updateData.importedOverdueDays = dto.importedOverdueDays;
+      updateData.overdueDays = dto.importedOverdueDays;
+      updateData.customerGroup = calculateCustomerGroupFromImportedOverdueDays(dto.importedOverdueDays);
     }
 
     const customer = await this.customerRepository.updateById(id, updateData);
@@ -224,6 +225,7 @@ export class CustomerService {
       guarantorName: customer.guarantorNameEncrypted ? decrypt(customer.guarantorNameEncrypted) : undefined,
       guarantorPhone: customer.guarantorPhoneEncrypted ? decrypt(customer.guarantorPhoneEncrypted) : undefined,
       dueDate: customer.dueDate,
+      dtOfOpen: customer.dtOfOpen,
       importedOverdueDays: customer.importedOverdueDays ?? 0,
       overdueDays: customer.overdueDays,
       customerGroup: customer.customerGroup,
@@ -240,21 +242,7 @@ export class CustomerService {
    * so no encryption/decryption is needed.
    */
   async recalculateAllCustomerGroups(): Promise<{ updatedCount: number }> {
-    const customers = await this.customerRepository.findAllCustomers();
-    let updatedCount = 0;
-
-    for (const customer of customers) {
-      const { overdueDays, customerGroup } = calculateCustomerGroupAndOverdueDays(customer.dueDate);
-
-      if (customer.overdueDays !== overdueDays || customer.customerGroup !== customerGroup) {
-        await this.customerRepository.updateById(customer.id, {
-          overdueDays,
-          customerGroup,
-        });
-        updatedCount++;
-      }
-    }
-    logger.info(`Recalculated customer groups for ${updatedCount} customers.`);
-    return { updatedCount };
+    logger.info('Skipping automatic customer-group recalculation. Overdue days and customerGroup are imported and preserved from the provided source data.');
+    return { updatedCount: 0 };
   }
 }
