@@ -31,9 +31,6 @@ export class WhatsAppProvider {
       const cleanedPhone = this.cleanPhoneNumber(to);
       const url = `${this.apiUrl}/${this.phoneNumberId}/messages`;
 
-      console.log("sendTextMessage fun");
-      console.log(body + "-------------------------------------------------");
-      
       const payload = {
         messaging_product: 'whatsapp',
         recipient_type: 'individual',
@@ -44,10 +41,11 @@ export class WhatsAppProvider {
         },
       };
 
-      logger.info('WhatsApp Template Payload', {
-  url,
-  payload,
-});
+      logger.debug('WhatsApp text message payload prepared safely without logging customer content.', {
+        url,
+        recipient: cleanedPhone,
+        messageType: 'text',
+      });
 
       const response = await axios.post(url, payload, {
         headers: {
@@ -61,7 +59,7 @@ export class WhatsAppProvider {
         throw new Error('No message ID returned from WhatsApp Cloud API');
       }
 
-      logger.debug(`WhatsApp message sent to ${to}, ID: ${messageId}`);
+      logger.debug(`WhatsApp text message sent successfully. Message ID: ${messageId}`);
       return {
         whatsappMessageId: messageId,
         status: 'success',
@@ -90,14 +88,13 @@ export class WhatsAppProvider {
       const cleanedPhone = this.cleanPhoneNumber(to);
       const url = `${this.apiUrl}/${this.phoneNumberId}/messages`;
 
-      console.log("sendTemplateMessage fun");
-      console.log(templateName + "-------------------------------------------------");
-      console.log(variables.map(value => ({
-        type: 'text',
-        text: value,
-      })) + "-------------------------------------------------");
-      console.log(languageCode + "-------------------------------------------------");
-      
+      logger.debug('WhatsApp template payload prepared safely without logging template variables.', {
+        templateName,
+        variablesCount: variables.length,
+        languageCode,
+        recipient: cleanedPhone,
+      });
+
       const payload = {
         messaging_product: 'whatsapp',
         recipient_type: 'individual',
@@ -132,7 +129,7 @@ export class WhatsAppProvider {
         throw new Error('No message ID returned from WhatsApp Cloud API');
       }
 
-      logger.debug(`WhatsApp template message (${templateName}) sent to ${to}, ID: ${messageId}`);
+      logger.debug(`WhatsApp template message sent successfully. Template: ${templateName}. Message ID: ${messageId}`);
       return {
         whatsappMessageId: messageId,
         status: 'success',
@@ -168,8 +165,9 @@ export class WhatsAppProvider {
         },
       });
 
-      console.log("getMetaTemplates fun ---------------------------------------------");
-      console.log(response.data?.data || []);
+      logger.debug('Fetched Meta templates metadata safely without logging template objects.', {
+        templateCount: response.data?.data?.length || 0,
+      });
       return response.data?.data || [];
     } catch (error: any) {
       const errorMessage = error.response?.data?.error?.message || error.message;
