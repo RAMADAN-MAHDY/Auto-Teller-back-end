@@ -147,9 +147,6 @@ app.get("/callback", (req, res) => {
     return res.status(400).send("No code received");
   }
 
-  // هنا عندك الكود
-  console.log("AUTH CODE:", code);
-
   res.send(`
     <h2>Success</h2>
     <p>You can now return to Postman or backend</p>

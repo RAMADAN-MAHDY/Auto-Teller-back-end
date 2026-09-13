@@ -37,7 +37,10 @@ export class WebhookController {
   handleCallback = async (req: Request, res: Response): Promise<void> => {
     try {
       const body = req.body;
-      logger.info(`Incoming Webhook callback payload: ${JSON.stringify(body)}`);
+      logger.debug('Incoming WhatsApp webhook callback received safely.', {
+        object: body?.object,
+        entryCount: Array.isArray(body?.entry) ? body.entry.length : 0,
+      });
 
       // Validate WhatsApp event structure
       if (body.object === 'whatsapp_business_account') {
