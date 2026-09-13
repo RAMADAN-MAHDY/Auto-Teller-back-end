@@ -47,16 +47,20 @@ export class CampaignRepository extends BaseRepository<ICampaign> {
   }
 
   /**
-   * Increment campaign stats atomically.
+   * Increment campaign stats atomically and return the refreshed document.
    */
   async incrementStat(
     id: string,
     field: 'sent' | 'delivered' | 'read' | 'failed',
-  ): Promise<void> {
-    await this.model
-      .findByIdAndUpdate(id, {
-        $inc: { [`stats.${field}`]: 1 },
-      })
+  ): Promise<ICampaign | null> {
+    return this.model
+      .findByIdAndUpdate(
+        id,
+        {
+          $inc: { [`stats.${field}`]: 1 },
+        },
+        { new: true, runValidators: true },
+      )
       .exec();
   }
 
