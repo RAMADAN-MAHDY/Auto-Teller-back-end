@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import Container from 'typedi';
 import { AuthController } from './auth.controller';
-import { authenticate, validate } from '../../middlewares';
+import { authenticate, validate, authLimiter } from '../../middlewares';
 import {
   changePasswordSchema,
   loginSchema,
@@ -44,7 +44,7 @@ const controller = Container.get(AuthController);
  *       409:
  *         description: Email already exists
  */
-router.post('/register', validate(registerSchema), asyncHandler(controller.register));
+router.post('/register', authLimiter, validate(registerSchema), asyncHandler(controller.register));
 
 /**
  * @openapi
@@ -74,7 +74,7 @@ router.post('/register', validate(registerSchema), asyncHandler(controller.regis
  *       401:
  *         description: Invalid credentials
  */
-router.post('/login', validate(loginSchema), asyncHandler(controller.login));
+router.post('/login', authLimiter, validate(loginSchema), asyncHandler(controller.login));
 
 /**
  * @openapi

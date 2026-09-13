@@ -4,3 +4,4 @@ export { authorize } from './role.middleware';
 export { validate } from './validate.middleware';
 export { requestLogger } from './request-logger.middleware';
 export { mongoSanitizer, parameterPollutionProtection } from './sanitize.middleware';
+export { generalLimiter, authLimiter } from './rate-limit.middleware';

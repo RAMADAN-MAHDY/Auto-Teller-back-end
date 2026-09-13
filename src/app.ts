@@ -5,9 +5,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import Container from 'typedi';
-import axios from 'axios';
-
-
 
 import { env } from './configs/env.config';
 import { connectDatabase, disconnectDatabase } from './configs/database.config';
@@ -23,6 +20,7 @@ import {
   requestLogger,
   mongoSanitizer,
   parameterPollutionProtection,
+  generalLimiter,
 } from './middlewares';
 
 // Route Imports
@@ -56,6 +54,7 @@ webSocketServer.initialize(httpServer);
 const corsOrigin = env.CORS_ORIGIN.split(',');
 
 app.use(helmet());
+app.use(generalLimiter);
 app.use(
   cors({
     origin: corsOrigin,
@@ -95,64 +94,7 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 
-/**
- * STEP 1: Exchange code → Access Token
- */
-app.post("/exchange-token", async (req, res) => {
-  const { code } = req.body;
 
-  if (!code) {
-    return res.status(400).json({ error: "code is required" });
-  }
-
-  try {
-    const response = await axios.get(
-      "https://graph.facebook.com/v25.0/oauth/access_token",
-      {
-        params: {
-          client_id: process.env.APP_ID,
-          client_secret: process.env.APP_SECRET,
-          redirect_uri: process.env.REDIRECT_URI,
-          code: code,
-        },
-      }
-    );
-
-    return res.json({
-      success: true,
-      access_token: response.data.access_token,
-      expires_in: response.data.expires_in,
-    });
-  } catch (err: any) {
-    return res.status(500).json({
-      success: false,
-      error: err.response?.data || err.message,
-    });
-  }
-});
-
-
-/**
- * STEP 2: Handle Callback from WhatsApp
- */
-app.get("/callback", (req, res) => {
-  const code = req.query.code;
-  const error = req.query.error;
-
-  if (error) {
-    return res.status(400).send("Login failed: " + error);
-  }
-
-  if (!code) {
-    return res.status(400).send("No code received");
-  }
-
-  res.send(`
-    <h2>Success</h2>
-    <p>You can now return to Postman or backend</p>
-    <p>Code: ${code}</p>
-  `);
-});
 
 
 
