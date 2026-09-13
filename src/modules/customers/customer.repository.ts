@@ -34,6 +34,15 @@ export class CustomerRepository extends BaseRepository<ICustomer> {
   }
 
   /**
+   * Cursor-based fan-out for very large campaign customer groups.
+   * This keeps memory usage bounded while still preserving the same
+   * customer-group filtering semantics used by the queue processor.
+   */
+  findByCustomerGroupCursor(customerGroup: CustomerGroup): any {
+    return this.model.find({ customerGroup }).cursor();
+  }
+
+  /**
    * Upsert a customer by phone number.
    * `customerData` must already contain the encrypted/hashed fields
    * (phoneNumberEncrypted, phoneNumberHash, fullNameEncrypted, fullNameIndex, ...)
