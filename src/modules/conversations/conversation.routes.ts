@@ -10,12 +10,12 @@ const controller = Container.get(ConversationController);
 
 router.use(authenticate);
 
-router.get('/', validate(conversationQuerySchema, 'query'), asyncHandler(controller.list));
-router.get('/:id/timeline', asyncHandler(controller.timeline));
-router.get('/:id', asyncHandler(controller.findById));
-router.get('/:id/messages', asyncHandler(controller.findMessages));
-router.post('/:id/messages', validate(postConversationMessageSchema, 'body'), asyncHandler(controller.reply));
-router.patch('/:id/read', asyncHandler(controller.markRead));
-router.patch('/:id/close', asyncHandler(controller.close));
+router.get('/', validate(conversationQuerySchema, 'query'), asyncHandler(controller.list.bind(controller)));
+router.get('/:id/timeline', asyncHandler(controller.timeline.bind(controller)));
+router.get('/:id', asyncHandler(controller.findById.bind(controller)));
+router.get('/:id/messages', asyncHandler(controller.findMessages.bind(controller)));
+router.post('/:id/messages', validate(postConversationMessageSchema, 'body'), asyncHandler(controller.reply.bind(controller)));
+router.patch('/:id/read', asyncHandler(controller.markRead.bind(controller)));
+router.patch('/:id/close', asyncHandler(controller.close.bind(controller)));
 
 export default router;
