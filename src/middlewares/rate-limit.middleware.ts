@@ -6,6 +6,9 @@ export const generalLimiter = rateLimit({
   max: env.RATE_LIMIT_MAX,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: {
+    xForwardedForHeader: false,
+  },
   message: {
     success: false,
     message: 'Too many requests, please try again later.',
@@ -17,6 +20,9 @@ export const authLimiter = rateLimit({
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: {
+    xForwardedForHeader: false,
+  },
   skipSuccessfulRequests: false,
   message: {
     success: false,
