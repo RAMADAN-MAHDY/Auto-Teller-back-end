@@ -36,6 +36,7 @@ import reportRoutes from './modules/reports/report.routes';
 import conversationRoutes from './modules/conversations/conversation.routes';
 
 const app: Application = express();
+app.set('trust proxy', env.TRUST_PROXY);
 const httpServer = createServer(app);
 
 // 1. Establish Database Connection
