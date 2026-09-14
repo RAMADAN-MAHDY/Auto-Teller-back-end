@@ -23,6 +23,11 @@ export class CustomerRepository extends BaseRepository<ICustomer> {
     return this.model.findOne({ phoneNumberHash }).exec();
   }
 
+  async findByGuarantorPhoneNumber(phoneNumber: string): Promise<ICustomer | null> {
+    const guarantorPhoneHash = hmac(normalizePhone(phoneNumber));
+    return this.model.findOne({ guarantorPhoneHash }).exec();
+  }
+
   /**
    * Find customers by customer group with pagination.
    */

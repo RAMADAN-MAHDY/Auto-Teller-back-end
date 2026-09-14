@@ -55,7 +55,9 @@ export class ConversationService {
       return existing;
     }
 
-    const customer = await this.customerRepository.findByPhoneNumber(normalizedPhone);
+    const customer = await this.customerRepository.findByPhoneNumber(normalizedPhone)
+      ?? await this.customerRepository.findByGuarantorPhoneNumber(normalizedPhone);
+
     if (!customer) {
       logger.warn(`Conversation cannot be created because no local customer found for phone ${normalizedPhone}.`);
       return null;
