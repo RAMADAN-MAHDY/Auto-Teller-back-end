@@ -44,6 +44,9 @@ export class WebhookController {
   handleCallback = async (req: Request, res: Response): Promise<void> => {
     try {
       const body = req.body;
+      logger.info('Incoming WhatsApp webhook callback payload from Meta.', {
+        payload: body,
+      });
       logger.debug('Incoming WhatsApp webhook callback received safely.', {
         object: body?.object,
         entryCount: Array.isArray(body?.entry) ? body.entry.length : 0,
