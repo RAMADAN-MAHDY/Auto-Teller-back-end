@@ -63,6 +63,15 @@ export class ConversationService {
       return null;
     }
 
+    const conversationByCustomer = await this.conversationRepository.findByCustomerId(customer.id);
+    if (conversationByCustomer) {
+      conversationByCustomer.whatsappPhoneNumberId = whatsappPhoneNumberId;
+      conversationByCustomer.phoneNumber = normalizedPhone;
+      conversationByCustomer.lastMessageAt ??= new Date();
+      await conversationByCustomer.save();
+      return conversationByCustomer;
+    }
+
     const created = await this.conversationRepository.create({
       customerId: customer.id,
       phoneNumber: normalizedPhone,
