@@ -77,7 +77,17 @@ export class WebhookController {
                 }
 
                 try {
-                  const conversation = await this.conversationService.findOrCreateByPhone(phoneNumber, whatsappPhoneNumberId);
+                  const lookups = this.buildPhoneLookupCandidates(phoneNumber);
+                  let conversation = null;
+
+                  for (const lookupPhone of lookups) {
+                    const candidate = await this.conversationService.findOrCreateByPhone(lookupPhone, whatsappPhoneNumberId);
+                    if (candidate) {
+                      conversation = candidate;
+                      break;
+                    }
+                  }
+
                   if (!conversation) {
                     logger.warn(`No customer conversation created for inbound message from ${phoneNumber}.`);
                     continue;
@@ -162,6 +172,27 @@ export class WebhookController {
       res.status(500).send('Internal Server Error');
     }
   };
+
+  private buildPhoneLookupCandidates(phoneNumber: string): string[] {
+    const raw = String(phoneNumber || '').trim();
+    const digits = raw.replace(/\D/g, '');
+    const candidates = new Set<string>();
+
+    candidates.add(raw);
+    candidates.add(digits);
+    candidates.add(raw.startsWith('+') ? digits : `+${digits}`);
+
+    if (raw.startsWith('+') && digits.startsWith('2')) {
+      candidates.add(digits.slice(1));
+    }
+
+    if (!raw.startsWith('+') && digits.startsWith('2')) {
+      candidates.add(`+${digits}`);
+      candidates.add(digits.slice(1));
+    }
+
+    return Array.from(candidates);
+  }
 
   private async updateChatMessageStatus(whatsappMessageId: string, status: MessageStatus): Promise<void> {
     const chatMessage = await this.chatMessageRepository.findByWhatsAppId(whatsappMessageId);
