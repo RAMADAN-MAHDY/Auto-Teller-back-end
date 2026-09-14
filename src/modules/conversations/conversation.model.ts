@@ -21,7 +21,6 @@ const conversationSchema = new Schema<IConversation>(
       type: Schema.Types.ObjectId,
       ref: 'Customer',
       required: [true, 'Customer ID is required'],
-      unique: true,
     },
     phoneNumber: {
       type: String,
@@ -69,7 +68,6 @@ const conversationSchema = new Schema<IConversation>(
   },
 );
 
-conversationSchema.index({ customerId: 1 }, { unique: true });
 conversationSchema.index({ status: 1, lastMessageAt: -1 });
 conversationSchema.index({ phoneNumber: 1 });
 conversationSchema.index({ whatsappPhoneNumberId: 1 });
