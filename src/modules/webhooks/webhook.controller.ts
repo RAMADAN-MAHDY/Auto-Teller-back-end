@@ -3,16 +3,23 @@ import Container, { Service } from 'typedi';
 import { CampaignWebSocketService } from '../../websocket/campaign-websocket.service';
 import { MessageRepository } from '../messages/message.repository';
 import { CampaignRepository } from '../campaigns/campaign.repository';
-import { MessageStatus } from '../../common/constants';
+import { MessageStatus, ChatMessageStatus } from '../../common/constants';
 import { logger } from '../../logger';
 import { TemplateService } from '../templates/template.service';
 import { TemplateRepository } from '../templates/template.repository';
 import { env } from '../../configs/env.config';
+import { ChatMessageService } from '../chat-messages/chat-message.service';
+import { ConversationService } from '../conversations/conversation.service';
+import { ChatMessageType } from '../../common/constants';
+import { ChatMessageRepository } from '../chat-messages/chat-message.repository';
 @Service()
 export class WebhookController {
   private readonly messageRepository = Container.get(MessageRepository);
   private readonly campaignRepository = Container.get(CampaignRepository);
   private readonly campaignWebSocketService = Container.get(CampaignWebSocketService);
+  private readonly conversationService = Container.get(ConversationService);
+  private readonly chatMessageService = Container.get(ChatMessageService);
+  private readonly chatMessageRepository = Container.get(ChatMessageRepository);
 
   /**
    * GET verification endpoint for Meta Cloud API webhook setup.
@@ -50,6 +57,51 @@ export class WebhookController {
           for (const change of changes) {
             if (change.field === 'messages') {
               const value = change.value;
+              const messages = value?.messages || [];
+
+              for (const messageObj of messages) {
+                const from = messageObj?.from;
+                const text = messageObj?.text?.body || '';
+                const id = messageObj?.id;
+                const timestamp = messageObj?.timestamp;
+                const phoneNumber = messageObj?.from ? `+${String(messageObj.from)}` : '';
+                const metadata = messageObj?.metadata || {};
+                const whatsappPhoneNumberId = metadata.phone_number_id || env.WHATSAPP_PHONE_NUMBER_ID;
+
+                if (!from || !id || !phoneNumber) {
+                  logger.warn('Inbound WhatsApp message webhook omitted required message metadata.', { id, from, phoneNumber });
+                  continue;
+                }
+
+                try {
+                  const conversation = await this.conversationService.findOrCreateByPhone(phoneNumber, whatsappPhoneNumberId);
+                  if (!conversation) {
+                    logger.warn(`No customer conversation created for inbound message from ${phoneNumber}.`);
+                    continue;
+                  }
+
+                  const customerId = conversation.customerId?.toString();
+                  const chatMessage = await this.chatMessageService.saveInbound(
+                    conversation.id,
+                    customerId,
+                    id,
+                    phoneNumber,
+                    text,
+                    ChatMessageType.TEXT,
+                  );
+
+                  await this.conversationService.updateInboundMeta(
+                    conversation,
+                    text,
+                    timestamp ? new Date(Number(timestamp) * 1000) : new Date(),
+                  );
+
+                  logger.info(`Saved inbound WhatsApp chat message ${id} and linked it to conversation ${conversation.id}.`, { chatMessageId: chatMessage?.id });
+                } catch (error) {
+                  logger.error('Unable to process inbound WhatsApp chat message event.', error);
+                }
+              }
+
               const statuses = value?.statuses || [];
 
               for (const statusObj of statuses) {
@@ -65,7 +117,12 @@ export class WebhookController {
                 else if (statusStr === 'failed') targetStatus = MessageStatus.FAILED;
 
                 if (targetStatus && whatsappMessageId) {
-                  await this.updateMessageAndCampaignStats(whatsappMessageId, targetStatus, statusObj.errors?.[0]?.message);
+                  const outboundChat = await this.chatMessageRepository.findByWhatsAppId(whatsappMessageId);
+                  if (outboundChat) {
+                    await this.updateChatMessageStatus(whatsappMessageId, targetStatus);
+                  } else {
+                    await this.updateMessageAndCampaignStats(whatsappMessageId, targetStatus, statusObj.errors?.[0]?.message);
+                  }
                 } else {
                   logger.info(`Ignored status update: targetStatus or whatsappMessageId is empty/invalid. targetStatus: ${targetStatus}, ID: ${whatsappMessageId}`);
                 }
@@ -102,6 +159,39 @@ export class WebhookController {
       res.status(500).send('Internal Server Error');
     }
   };
+
+  private async updateChatMessageStatus(whatsappMessageId: string, status: MessageStatus): Promise<void> {
+    const chatMessage = await this.chatMessageRepository.findByWhatsAppId(whatsappMessageId);
+    if (!chatMessage) {
+      logger.info(`Webhook status update ignored: WhatsApp chat message ID ${whatsappMessageId} not in local chat database.`);
+      return;
+    }
+
+    const targetChatStatus = this.mapToChatMessageStatus(status);
+    if (!targetChatStatus) {
+      logger.info(`Unsupported chat status mapping for WhatsApp message ID ${whatsappMessageId}: ${status}`);
+      return;
+    }
+
+    if (chatMessage.status === targetChatStatus) {
+      logger.info(`Chat message status is already ${targetChatStatus} for ID ${chatMessage.id}. No update needed.`);
+      return;
+    }
+
+    await this.chatMessageRepository.updateById(chatMessage.id, {
+      status: targetChatStatus,
+    });
+
+    logger.info(`Chat message ${chatMessage.id} status updated to ${targetChatStatus} via webhook.`);
+  }
+
+  private mapToChatMessageStatus(status: MessageStatus): ChatMessageStatus | undefined {
+    if (status === MessageStatus.SENT) return ChatMessageStatus.SENT;
+    if (status === MessageStatus.DELIVERED) return ChatMessageStatus.DELIVERED;
+    if (status === MessageStatus.READ) return ChatMessageStatus.READ;
+    if (status === MessageStatus.FAILED) return ChatMessageStatus.FAILED;
+    return undefined;
+  }
 
   private async updateMessageAndCampaignStats(
     whatsappMessageId: string,

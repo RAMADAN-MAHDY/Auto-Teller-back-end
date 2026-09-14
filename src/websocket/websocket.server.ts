@@ -33,6 +33,26 @@ export interface CampaignStats {
   endTime?: Date;
 }
 
+export interface ChatMessageEvent {
+  conversationId: string;
+  chatMessageId?: string;
+  direction: 'INBOUND' | 'OUTBOUND';
+  text?: string;
+  whatsappMessageId?: string;
+  status?: string;
+  createdAt: Date;
+}
+
+export interface ChatConversationEvent {
+  conversationId: string;
+  customerId?: string;
+  unreadCount?: number;
+  lastMessage?: string;
+  lastMessageAt?: Date;
+  status?: string;
+  updatedAt: Date;
+}
+
 @Service()
 export class WebSocketServer {
   private io: SocketServer | null = null;
@@ -68,6 +88,17 @@ export class WebSocketServer {
       socket.on('subscribe-user-campaigns', (userId: string) => {
         socket.join(`user:${userId}`);
         logger.info(`Client ${clientId} subscribed to user campaigns: ${userId}`);
+      });
+
+      // Chat room subscriptions
+      socket.on('join-conversation', (conversationId: string) => {
+        socket.join(`conversation:${conversationId}`);
+        logger.info(`Client ${clientId} joined conversation room: ${conversationId}`);
+      });
+
+      socket.on('leave-conversation', (conversationId: string) => {
+        socket.leave(`conversation:${conversationId}`);
+        logger.info(`Client ${clientId} left conversation room: ${conversationId}`);
       });
 
       socket.on('disconnect', () => {
@@ -209,6 +240,26 @@ export class WebSocketServer {
 
     this.io.to(`campaign:${campaignId}`).emit('message-update', message);
     logger.info(`Message update broadcasted for campaign: ${campaignId}, message: ${message.id}, status: ${message.status}`);
+  }
+
+  emitChatMessage(event: ChatMessageEvent): void {
+    if (!this.io) {
+      logger.warn('WebSocket server not initialized');
+      return;
+    }
+
+    this.io.to(`conversation:${event.conversationId}`).emit('chat:message:new', event);
+    logger.info(`Chat message event emitted for conversation ${event.conversationId}`);
+  }
+
+  emitChatConversationUpdated(event: ChatConversationEvent): void {
+    if (!this.io) {
+      logger.warn('WebSocket server not initialized');
+      return;
+    }
+
+    this.io.to(`conversation:${event.conversationId}`).emit('chat:conversation:updated', event);
+    logger.info(`Chat conversation update emitted for conversation ${event.conversationId}`);
   }
 
   isInitialized(): boolean {
