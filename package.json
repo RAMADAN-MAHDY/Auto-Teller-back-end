@@ -4,9 +4,9 @@
   "description": "WhatsApp Campaign Management System for Bank Employees",
   "main": "dist/app.js",
   "scripts": {
-    "dev": "tsx watch src/app.ts",
-    "build": "tsc",
-    "start": "node dist/app.js",
+    "dev": "node api.js && tsx watch src/app.ts",
+    "build": "node api.js && tsc",
+    "start": "node api.js && node dist/app.js",
     "seed": "tsx src/database/seed.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
