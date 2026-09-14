@@ -11,6 +11,10 @@ export class MessageRepository extends BaseRepository<IMessage> {
     super(MessageModel);
   }
 
+  async findByCustomerId(customerId: string): Promise<IMessage[]> {
+    return this.model.find({ customerId }).sort({ createdAt: 1 }).exec();
+  }
+
   /**
    * Find messages by campaign with pagination.
    */

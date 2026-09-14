@@ -7,6 +7,44 @@ export enum UserRole {
 }
 
 // ===========================
+// Chat Conversation Statuses
+// ===========================
+export enum ConversationStatus {
+  OPEN = 'OPEN',
+  CLOSED = 'CLOSED',
+}
+
+// ===========================
+// Chat Message Direction
+// ===========================
+export enum MessageDirection {
+  INBOUND = 'INBOUND',
+  OUTBOUND = 'OUTBOUND',
+}
+
+// ===========================
+// Chat Message Type
+// ===========================
+export enum ChatMessageType {
+  TEXT = 'text',
+  IMAGE = 'image',
+  DOCUMENT = 'document',
+  AUDIO = 'audio',
+  VIDEO = 'video',
+}
+
+// ===========================
+// Chat Message Status
+// ===========================
+export enum ChatMessageStatus {
+  PENDING = 'PENDING',
+  SENT = 'SENT',
+  DELIVERED = 'DELIVERED',
+  READ = 'READ',
+  FAILED = 'FAILED',
+}
+
+// ===========================
 // Campaign Statuses
 // ===========================
 export enum CampaignStatus {

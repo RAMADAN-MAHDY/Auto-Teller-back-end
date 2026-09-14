@@ -33,6 +33,7 @@ import campaignRoutes from './modules/campaigns/campaign.routes';
 import messageRoutes from './modules/messages/message.routes';
 import webhookRoutes from './modules/webhooks/webhook.routes';
 import reportRoutes from './modules/reports/report.routes';
+import conversationRoutes from './modules/conversations/conversation.routes';
 
 const app: Application = express();
 const httpServer = createServer(app);
@@ -86,6 +87,7 @@ app.use(`${apiPrefix}/customers`, customerRoutes);
 app.use(`${apiPrefix}/templates`, templateRoutes);
 app.use(`${apiPrefix}/campaigns`, campaignRoutes);
 app.use(`${apiPrefix}/messages`, messageRoutes);
+app.use(`${apiPrefix}/conversations`, conversationRoutes);
 app.use(`${apiPrefix}/reports`, reportRoutes);
 
 // Base Health Check

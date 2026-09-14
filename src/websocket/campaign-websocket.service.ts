@@ -1,5 +1,5 @@
 import { Service } from 'typedi';
-import { WebSocketServer, CampaignUpdateEvent, CampaignStats } from './websocket.server';
+import { WebSocketServer, CampaignUpdateEvent, CampaignStats, ChatMessageEvent, ChatConversationEvent } from './websocket.server';
 import { logger } from '../logger';
 
 @Service()
@@ -102,6 +102,22 @@ export class CampaignWebSocketService {
   sendMessageUpdate(campaignId: string, message: { id: string; status: string; deliveredAt?: Date; readAt?: Date; error?: string }): void {
     this.webSocketServer.broadcastMessageUpdate(campaignId, message);
     logger.info(`Message update sent via WebSocket for campaign ${campaignId}, message ${message.id}`);
+  }
+
+  /**
+   * إرسال حدث جديد للرسالة داخل الشات
+   */
+  sendChatMessage(event: ChatMessageEvent): void {
+    this.webSocketServer.emitChatMessage(event);
+    logger.info(`Chat message emitted for conversation ${event.conversationId}`);
+  }
+
+  /**
+   * إرسال تحديث في محادثة الشات
+   */
+  sendConversationUpdated(event: ChatConversationEvent): void {
+    this.webSocketServer.emitChatConversationUpdated(event);
+    logger.info(`Chat conversation updated for conversation ${event.conversationId}`);
   }
 
   /**
